@@ -442,6 +442,12 @@ function showKpiUI() {
         document.getElementById('mcard-'+sid)?.classList.remove('dimmed');
     });
 
+    const labelMap = { ms1:'MS1', ms2:'MS2', conrod:'Conrod', hde:'HDE' };
+    Object.entries(labelMap).forEach(([sid, lbl]) => {
+        const ml = document.querySelector('#mcard-'+sid+' .metric-label');
+        if (ml) ml.textContent = lbl;
+    });
+
     const mths = ['Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec','Jan','Feb','Mar'].map(m=>`<th>${m}</th>`).join('');
     ['MS1','MS2','Conrod','HDE'].forEach(sec => {
         const sid  = sec.toLowerCase();
@@ -625,9 +631,17 @@ async function loadProductivity() {
             const lineMap=ldMap[lid]||{};
             const lineNames=Object.keys(lineMap);
 
-            // Update card title
             const ct=document.getElementById('ctitle-'+sid);
             if (ct) ct.textContent=loc.name.toUpperCase();
+
+            // Update juga badge-section label
+            const cardEl=document.getElementById('card-'+sid);
+            if (cardEl) {
+                // Ganti warna border-top card sesuai urutan lokasi
+                const locColors=['#185FA5','#2e7d32','#854F0B','#6B2D8B'];
+                const locIdx=allLocations.findIndex(l=>String(l.id)===lid);
+                if (locIdx>=0) cardEl.style.borderTopColor=locColors[locIdx];
+            }
 
             // Metric card
             const allP26=Object.values(lineMap).flatMap(ld=>ld.prod26).filter(v=>v!==null);
@@ -636,6 +650,8 @@ async function loadProductivity() {
             const avgR=allR26.length?(allR26.reduce((a,b)=>a+b,0)/allR26.length).toFixed(2):'—';
             setMetricCard(sid,avgP,escH(loc.name),
                 `<span style="color:#6b7280">Pass Rate avg: <strong>${avgR}%</strong></span>`);
+            const mlabel = document.querySelector('#mcard-'+sid+' .metric-label');
+            if (mlabel) mlabel.textContent = loc.name.toUpperCase();
             const emojiEl = document.getElementById('metric-'+sid+'-emoji');
             if (emojiEl) emojiEl.textContent = '📊';
 

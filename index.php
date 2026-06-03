@@ -226,6 +226,55 @@ $ppm_total  = count(array_filter(
                             </tbody>
                         </table>
                     </div>
+
+                    <!-- Kaizen Analytics -->
+                    <div style="flex-shrink:0; border-top:1px solid #f0f0f0; padding-top:8px; margin-top:6px;">
+                        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:6px; flex-wrap:wrap; gap:4px;">
+                            <div style="font-size:10px; font-weight:700; color:#6b7280; text-transform:uppercase; letter-spacing:0.05em;">Kaizen Analytics</div>
+                            <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+                                <!-- Filter Tahun -->
+                                <select id="kaizen-filter-tahun" onchange="loadKaizenAnalytics()"
+                                    style="font-size:10px; border:1px solid #e5e7eb; border-radius:6px;
+                                        padding:2px 6px; background:#fff; cursor:pointer; outline:none;">
+                                    <option value="2024">2024</option>
+                                    <option value="2025" selected>2025</option>
+                                    <option value="2026">2026</option>
+                                </select>
+                                <!-- Filter Bulan -->
+                                <div style="display:flex; gap:2px; flex-wrap:wrap;">
+                                    <?php
+                                    $bulan_list = ['Jan'=>1,'Feb'=>2,'Mar'=>3,'Apr'=>4,'Mei'=>5,'Jun'=>6,
+                                                'Jul'=>7,'Agu'=>8,'Sep'=>9,'Okt'=>10,'Nov'=>11,'Des'=>12];
+                                    foreach ($bulan_list as $label => $num):
+                                    ?>
+                                    <button onclick="setKaizenBulan(<?= $num ?>, this)"
+                                        class="kaizen-bulan-btn <?= $num == 8 ? 'active' : '' ?>"
+                                        style="font-size:9px; padding:2px 6px; border-radius:4px; cursor:pointer;
+                                            border:1px solid <?= $num == 8 ? '#D0021B' : '#e5e7eb' ?>;
+                                            background:<?= $num == 8 ? '#D0021B' : '#fff' ?>;
+                                            color:<?= $num == 8 ? '#fff' : '#6b7280' ?>; font-weight:600;">
+                                        <?= $label ?>
+                                    </button>
+                                    <?php endforeach; ?>
+                                </div>
+                            </div>
+                        </div>
+                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+                            <div>
+                                <div style="font-size:9px; font-weight:700; color:#374151; margin-bottom:4px; text-align:center;">AWARENESS RATIO</div>
+                                <div style="position:relative; height:160px;">
+                                    <canvas id="chartAwareness"></canvas>
+                                </div>
+                            </div>
+                            <div>
+                                <div style="font-size:9px; font-weight:700; color:#374151; margin-bottom:4px; text-align:center;">CATEGORY TENDENCY</div>
+                                <div style="position:relative; height:160px;">
+                                    <canvas id="chartCategory"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                 </div>
             </div>
             <!-- END KOLOM 2 -->
@@ -376,7 +425,7 @@ function ytdTooltipLabel(ctx, kpi) {
     const v = ctx.parsed.y, lbl = ctx.dataset.label ?? '';
     if (kpi==='fcost')           return ` ${lbl}: Rp ${Number(v).toLocaleString('id-ID')}`;
     if (kpi==='operation_ratio') return ` ${lbl}: ${v.toFixed(1)}%`;
-    if (kpi==='quality')         return ` ${lbl}: ${Number(v).toLocaleString('id-ID')} PPM`;
+    if (kpi==='quality')         return ` ${lbl}: ${Number(v).toLocaleString('id-ID')} Part per Million`;
     return ` ${lbl}: ${v} case`;
 }
 
@@ -1041,6 +1090,261 @@ function checkKPIAlert(gaps) {
     }
 }
 
+// ===== KAIZEN ANALYTICS =====
+const KAIZEN_API = 'http://192.168.183.157/kaizensheetmonitoring/get_data.php';
+let awarenessChart = null;
+let categoryChart  = null;
+let kaizenBulanAktif = 8;
+
+function setKaizenBulan(angka, el) {
+    kaizenBulanAktif = angka;
+    document.querySelectorAll('.kaizen-bulan-btn').forEach(b => {
+        b.style.background  = '#fff';
+        b.style.borderColor = '#e5e7eb';
+        b.style.color       = '#6b7280';
+    });
+    el.style.background  = '#D0021B';
+    el.style.borderColor = '#D0021B';
+    el.style.color       = '#fff';
+    loadKaizenAnalytics();
+}
+
+async function loadKaizenAnalytics() {
+    try {
+        const tahunEl = document.getElementById('kaizen-filter-tahun');
+        const bulan   = kaizenBulanAktif;
+        const tahun   = tahunEl ? parseInt(tahunEl.value) : new Date().getFullYear();
+
+        const r = await fetch(`${KAIZEN_API}?bulan=${bulan}&tahun=${tahun}`);
+        const d = await r.json();
+
+        const monthNames = ['','Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
+        const periodEl = document.getElementById('kaizen-analytics-period');
+        if (periodEl) periodEl.textContent = `${monthNames[bulan]} ${tahun}`;
+
+        renderAwarenessChart(d.dept);
+        renderCategoryChart(d.radar);
+
+    } catch(e) {
+        console.error('Kaizen Analytics error:', e);
+    }
+}
+
+function renderAwarenessChart(dept) {
+    const ctx = document.getElementById('chartAwareness');
+    if (!ctx) return;
+    if (awarenessChart) { awarenessChart.destroy(); awarenessChart = null; }
+
+    const processedValues = dept.labels.map((_, i) => {
+        const ikut  = dept.karyawan_ikut[i]  || 0;
+        const total = dept.total_karyawan[i] || 1;
+        return parseFloat(((ikut / total) * 100).toFixed(1));
+    });
+
+    awarenessChart = new Chart(ctx, {
+        type: 'radar',
+        data: {
+            labels: dept.labels,
+            datasets: [{
+                label: 'Participation %',
+                data: processedValues,
+                borderColor: '#ef4444',
+                backgroundColor: 'rgba(239,68,68,0.2)',
+                borderWidth: 1.5,
+                pointRadius: 2,
+                pointBackgroundColor: '#D0021B',
+            }]
+        },
+        options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        onClick: (event, elements, chart) => {
+            const scale = chart.scales.r;
+            const canvasPos = Chart.helpers.getRelativePosition(event, chart);
+            if (scale._pointLabelItems) {
+                scale._pointLabelItems.forEach((item, index) => {
+                    if (canvasPos.x >= item.left && canvasPos.x <= item.right &&
+                        canvasPos.y >= item.top  && canvasPos.y <= item.bottom) {
+                        openKaizenDeptDetail(chart.data.labels[index]);
+                    }
+                });
+            }
+        },
+            scales: {
+                r: {
+                    min: 0, max: 100,
+                    ticks: { font:{size:7}, stepSize:25, callback: v => v+'%', color:'#9ca3af' },
+                    pointLabels: { font:{size:7}, color:'#374151' },
+                    grid: { color:'rgba(0,0,0,0.08)' },
+                    angleLines: { color:'rgba(0,0,0,0.08)' },
+                }
+            }
+        }
+    });
+}
+
+function renderCategoryChart(radar) {
+    const ctx = document.getElementById('chartCategory');
+    if (!ctx) return;
+    if (categoryChart) { categoryChart.destroy(); categoryChart = null; }
+
+    const cleanValues     = radar.values.map(v => Math.round(v));
+    const totalAktual     = cleanValues.reduce((a, b) => a + b, 0);
+    const processedValues = cleanValues.map(v =>
+        totalAktual > 0 ? parseFloat(((v / totalAktual) * 100).toFixed(1)) : 0
+    );
+
+    categoryChart = new Chart(ctx, {
+        type: 'radar',
+        data: {
+            labels: radar.labels,
+            datasets: [{
+                label: 'Contribution Share',
+                data: processedValues,
+                borderColor: '#8b0000',
+                backgroundColor: 'rgba(139,0,0,0.2)',
+                borderWidth: 1.5,
+                pointRadius: 2,
+                pointBackgroundColor: '#8b0000',
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: { callbacks: {
+                    label: (ctx) => {
+                        const i = ctx.dataIndex;
+                        return `${radar.labels[i]}: ${cleanValues[i]} / ${totalAktual} (${processedValues[i]}%)`;
+                    }
+                }}
+            },
+            scales: {
+                r: {
+                    min: 0, max: 100,
+                    ticks: { font:{size:7}, stepSize:25, callback: v => v+'%', color:'#9ca3af' },
+                    pointLabels: { font:{size:8}, color:'#374151' },
+                    grid: { color:'rgba(0,0,0,0.08)' },
+                    angleLines: { color:'rgba(0,0,0,0.08)' },
+                }
+            }
+        }
+    });
+}
+
+function closeKaizenModal() {
+    document.getElementById('modalKaizenDept').style.display = 'none';
+}
+
+async function openKaizenDeptDetail(deptName) {
+    const modal = document.getElementById('modalKaizenDept');
+    modal.style.display = 'flex';
+
+    document.getElementById('modalKaizenTitle').textContent =
+        `BREAKDOWN DETAIL KARYAWAN: ${deptName.toUpperCase()}`;
+    document.getElementById('modalKaizenTotal').textContent = '—';
+    document.getElementById('modalKaizenIkut').textContent  = '—';
+    document.getElementById('modalKaizenPersen').textContent = '—';
+    document.getElementById('modalKaizenTbody').innerHTML =
+        '<tr><td colspan="3" style="text-align:center;padding:20px;color:#9ca3af;">Loading...</td></tr>';
+
+    try {
+        const tahunEl = document.getElementById('kaizen-filter-tahun');
+        const tahun   = tahunEl ? parseInt(tahunEl.value) : new Date().getFullYear();
+        const bulan   = kaizenBulanAktif;
+
+        const r = await fetch(
+            `http://192.168.183.157/kaizensheetmonitoring/get_detail_karyawan.php?dept=${encodeURIComponent(deptName)}&bulan=${bulan}&tahun=${tahun}`
+        );
+        const d = await r.json();
+
+        document.getElementById('modalKaizenTotal').textContent = d.rekap.total_karyawan;
+        document.getElementById('modalKaizenIkut').textContent  = d.rekap.karyawan_ikut;
+        document.getElementById('modalKaizenPersen').textContent = d.rekap.persentase + '%';
+
+        const tbody = document.getElementById('modalKaizenTbody');
+        if (!d.karyawan || d.karyawan.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;padding:20px;color:#9ca3af;">Belum ada data</td></tr>';
+            return;
+        }
+        tbody.innerHTML = d.karyawan.map((k, i) => `
+            <tr style="border-bottom:1px solid #f0f0f0;">
+                <td style="padding:8px 16px;">
+                    <span style="background:${i<3?'#D0021B':'#6b7280'};color:#fff;
+                                 border-radius:50%; width:20px; height:20px;
+                                 display:inline-flex; align-items:center; justify-content:center;
+                                 font-size:10px; font-weight:700;">${i+1}</span>
+                </td>
+                <td style="padding:8px 16px; font-weight:600;">${k.nama_karyawan.trim()}</td>
+                <td style="padding:8px 16px; text-align:center; font-weight:700;">${k.total_kaizen} Lembar</td>
+            </tr>
+        `).join('');
+
+    } catch(e) {
+        document.getElementById('modalKaizenTbody').innerHTML =
+            '<tr><td colspan="3" style="text-align:center;padding:20px;color:#dc2626;">⚠ Gagal memuat data</td></tr>';
+    }
+}
+
+// Tutup modal kalau klik backdrop
+document.getElementById('modalKaizenDept').addEventListener('click', function(e) {
+    if (e.target === this) closeKaizenModal();
+});
+
+loadKaizenAnalytics();
+
 </script>
+
+<!-- Modal Kaizen Dept Detail -->
+<div id="modalKaizenDept" style="display:none; position:fixed; inset:0; z-index:9999;
+     background:rgba(0,0,0,0.5); align-items:center; justify-content:center;">
+    <div style="background:#fff; border-radius:16px; width:560px; max-width:90vw;
+                max-height:80vh; overflow:hidden; display:flex; flex-direction:column;
+                box-shadow:0 20px 60px rgba(0,0,0,0.3);">
+        <!-- Header -->
+        <div id="modalKaizenHeader" style="background:#7B0000; color:#fff;
+             padding:14px 20px; display:flex; align-items:center; justify-content:space-between;">
+            <div style="font-size:13px; font-weight:800;" id="modalKaizenTitle">DETAIL KARYAWAN</div>
+            <button onclick="closeKaizenModal()"
+                style="background:none; border:none; color:#fff; font-size:18px; cursor:pointer;">✕</button>
+        </div>
+        <!-- Rekap -->
+        <div id="modalKaizenRekap"
+             style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:0;
+                    border-bottom:1px solid #f0f0f0; flex-shrink:0;">
+            <div style="text-align:center; padding:12px 8px; border-right:1px solid #f0f0f0;">
+                <div style="font-size:9px; color:#6b7280; text-transform:uppercase; margin-bottom:4px;">Jumlah Karyawan</div>
+                <div style="font-size:20px; font-weight:700;" id="modalKaizenTotal">—</div>
+                <div style="font-size:10px; color:#6b7280;">Orang</div>
+            </div>
+            <div style="text-align:center; padding:12px 8px; border-right:1px solid #f0f0f0;">
+                <div style="font-size:9px; color:#6b7280; text-transform:uppercase; margin-bottom:4px;">Karyawan Ikut</div>
+                <div style="font-size:20px; font-weight:700; color:#D0021B;" id="modalKaizenIkut">—</div>
+                <div style="font-size:10px; color:#6b7280;">Orang</div>
+            </div>
+            <div style="text-align:center; padding:12px 8px;">
+                <div style="font-size:9px; color:#6b7280; text-transform:uppercase; margin-bottom:4px;">Persentase</div>
+                <div style="font-size:20px; font-weight:700; color:#22c55e;" id="modalKaizenPersen">—</div>
+            </div>
+        </div>
+        <!-- Tabel -->
+        <div style="overflow-y:auto; flex:1;">
+            <table style="width:100%; border-collapse:collapse; font-size:12px;">
+                <thead>
+                    <tr style="background:#f4f5f7; position:sticky; top:0;">
+                        <th style="padding:8px 16px; text-align:left; font-size:10px; color:#6b7280; font-weight:700;">Rank</th>
+                        <th style="padding:8px 16px; text-align:left; font-size:10px; color:#6b7280; font-weight:700;">Nama Karyawan</th>
+                        <th style="padding:8px 16px; text-align:center; font-size:10px; color:#6b7280; font-weight:700;">Kontribusi Kaizen</th>
+                    </tr>
+                </thead>
+                <tbody id="modalKaizenTbody">
+                    <tr><td colspan="3" style="text-align:center; padding:20px; color:#9ca3af;">Loading...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
 </body>
 </html>

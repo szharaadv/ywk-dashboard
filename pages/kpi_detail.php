@@ -335,7 +335,7 @@ function fmtKpi(val,kpi) {
     if (val===null||val===undefined) return '—';
     if (kpi==='fcost')           return 'Rp '+Number(val).toLocaleString('id-ID');
     if (kpi==='operation_ratio') return val+'%';
-    if (kpi==='quality')         return Number(val).toLocaleString('id-ID')+' PPM';
+    if (kpi==='quality')         return Number(val).toLocaleString('id-ID')+' Part per Million';
     if (kpi==='safety')          return val+' case';
     return val;
 }
@@ -533,18 +533,18 @@ function transformProdRows(rows) {
 
 function buildApexOptions(chartId,ld) {
     const yb=YEAR_BASE-1,yc=YEAR_BASE;
-    const mSz=[0,0,countNonNull(ld.pass26)<=1?4:0,countNonNull(ld.pass25)<=1?4:0];
+    const mSz=[0,0,countNonNull(ld.pass25)<=1?4:0,countNonNull(ld.pass26)<=1?4:0];
     return {
         chart:{id:chartId,fontFamily:"'Segoe UI',sans-serif",background:'transparent',
                height:180,type:'line',toolbar:{show:false},zoom:{enabled:false},
                animations:{enabled:false},redrawOnParentResize:true},
         series:[
-            {name:`Productivity ${yc}`,type:'bar', data:zipPairs(ALL_FY_TS,ld.prod26)},
-            {name:`Productivity ${yb}`,type:'bar', data:zipPairs(ALL_FY_TS,ld.prod25)},
-            {name:`Pass Rate ${yc} (%)`,type:'line',data:zipPairs(ALL_FY_TS,ld.pass26)},
-            {name:`Pass Rate ${yb} (%)`,type:'line',data:zipPairs(ALL_FY_TS,ld.pass25)},
+            {name:`Productivity ${yc}`,type:'bar', data:zipPairs(ALL_FY_TS,ld.prod25)},
+            {name:`Productivity ${yb}`,type:'bar', data:zipPairs(ALL_FY_TS,ld.prod26)},
+            {name:`Pass Rate ${yc} (%)`,type:'line',data:zipPairs(ALL_FY_TS,ld.pass25)},
+            {name:`Pass Rate ${yb} (%)`,type:'line',data:zipPairs(ALL_FY_TS,ld.pass26)},
         ],
-        colors:[C.prod26,C.prod25,C.pass26,C.pass25],
+        colors:[C.prod25,C.prod26,C.pass25,C.pass26],
         theme:{mode:'light'},
         grid:{borderColor:'rgba(60,90,180,.4)',strokeDashArray:2,padding:{top:0,right:0,bottom:0,left:0}},
         legend:{show:false},
@@ -834,7 +834,7 @@ function makeKpiChartOpts(kpi,datasets) {
                 const v=ctx.parsed.y,l=ctx.dataset.label??'';
                 if(kpi==='fcost')           return ` ${l}: Rp ${Number(v).toLocaleString('id-ID')}`;
                 if(kpi==='operation_ratio') return ` ${l}: ${v}%`;
-                if(kpi==='quality')         return ` ${l}: ${Number(v).toLocaleString('id-ID')} PPM`;
+                if(kpi==='quality')         return ` ${l}: ${Number(v).toLocaleString('id-ID')} Part per Million`;
                 return ` ${l}: ${Number(v).toLocaleString('id-ID')}`;
             }}}
         },

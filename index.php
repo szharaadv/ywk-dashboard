@@ -1091,7 +1091,7 @@ function checkKPIAlert(gaps) {
 }
 
 // ===== KAIZEN ANALYTICS =====
-const KAIZEN_API = 'http://kaizen-dashboard.yadin.com/';
+const KAIZEN_API = 'http://kaizen-dashboard.yadin.com/get_data.php';
 let awarenessChart = null;
 let categoryChart  = null;
 let kaizenBulanAktif = 8;
@@ -1255,7 +1255,7 @@ async function openKaizenDeptDetail(deptName) {
         const bulan   = kaizenBulanAktif;
 
         const r = await fetch(
-            `'http://kaizen-dashboard.yadin.com/';`
+            `http://kaizen-dashboard.yadin.com/get_detail_karyawan.php?dept=${encodeURIComponent(deptName)}&bulan=${bulan}&tahun=${tahun}`
         );
         const d = await r.json();
 

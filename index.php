@@ -1288,9 +1288,12 @@ async function openKaizenDeptDetail(deptName) {
 }
 
 // Tutup modal kalau klik backdrop
-document.getElementById('modalKaizenDept').addEventListener('click', function(e) {
-    if (e.target === this) closeKaizenModal();
-});
+const modalKaizenEl = document.getElementById('modalKaizenDept');
+if (modalKaizenEl) {
+    modalKaizenEl.addEventListener('click', function(e) {
+        if (e.target === this) closeKaizenModal();
+    });
+}
 
 loadKaizenAnalytics();
 

@@ -19,6 +19,7 @@ $ppm_total  = count(array_filter(
     <title>YWK Dashboard</title>
     <link rel="stylesheet" href="assets/css/style.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/apexcharts/3.45.2/apexcharts.min.js"></script>
     <style>
         ::-webkit-scrollbar { display: none; }
         @keyframes pulse {
@@ -368,7 +369,8 @@ fetch('api/overview_summary.php' + QS)
                 </span>`).join('');
     }).catch(() => {});
 
-let ytdChart = null, ytdCache = {}, activeKPI = 'operation_ratio', activeSec = 'MS1';
+    let apexProdChart = null;
+    let ytdChart = null, ytdCache = {}, activeKPI = 'operation_ratio', activeSec = 'MS1';
 
 function ytdTooltipLabel(ctx, kpi) {
     const v = ctx.parsed.y, lbl = ctx.dataset.label ?? '';
@@ -398,6 +400,19 @@ function calcYAxis(datasets) {
 }
 
 function renderYTDChart(json) {
+    // Destroy & hide ApexCharts
+    if (apexProdChart) { apexProdChart.destroy(); apexProdChart = null; }
+    const apexDiv = document.getElementById('apexProdChart');
+    if (apexDiv) { apexDiv.style.display = 'none'; }
+
+    // Pastikan canvas Chart.js terlihat
+    const canvas = document.getElementById('chartKPI');
+    if (canvas) {
+        canvas.style.display = 'block';
+        canvas.style.width   = '100%';
+        canvas.style.height  = '100%';
+    }
+
     const color   = SEC_COLORS[activeSec];
     const curLbl  = json.cur_fy.replace('fy','FY');
     const lastLbl = json.last_fy.replace('fy','FY');
@@ -543,87 +558,105 @@ function renderProductivityChart(lineMap, sec) {
     document.getElementById('ytd-home-subtitle').textContent =
         `Productivity & Pass Rate · ${sec} · ${lineNames.length} line`;
 
-    const datasets = [
-        {
-            label: `Productivity FY${yc}`,
-            data: merged.prod26,
-            borderColor: '#1500d1',
-            backgroundColor: '#1500d120',
-            borderWidth: 2.5, pointRadius: 3, pointHoverRadius: 5,
-            tension: 0.3, fill: true, spanGaps: false,
-            yAxisID: 'y'
-        },
-        {
-            label: `Productivity FY${yb}`,
-            data: merged.prod25,
-            borderColor: '#8cbab7',
-            backgroundColor: 'transparent',
-            borderWidth: 2, borderDash: [5,4],
-            pointRadius: 3, pointHoverRadius: 5,
-            tension: 0.3, fill: false, spanGaps: false,
-            yAxisID: 'y'
-        },
-        {
-            label: `Pass Rate FY${yc} (%)`,
-            data: merged.pass26,
-            borderColor: '#F59E0B',
-            backgroundColor: 'transparent',
-            borderWidth: 2, pointRadius: 3, pointHoverRadius: 5,
-            tension: 0.3, fill: false, spanGaps: false,
-            yAxisID: 'y2'
-        },
-        {
-            label: `Pass Rate FY${yb} (%)`,
-            data: merged.pass25,
-            borderColor: '#ff5900',
-            backgroundColor: 'transparent',
-            borderWidth: 1.5, borderDash: [3,3],
-            pointRadius: 3, pointHoverRadius: 5,
-            tension: 0.3, fill: false, spanGaps: false,
-            yAxisID: 'y2'
-        },
-    ];
+    const canvas = document.getElementById('chartKPI');
 
-    const options = {
-        responsive: true, maintainAspectRatio: false,
-        plugins: {
-            legend: {
-                display: true, position: 'top', align: 'end',
-                labels: { font:{size:9}, boxWidth:14, padding:6, usePointStyle:true }
-            },
-            tooltip: { callbacks: { label: ctx => {
-                const v = ctx.parsed.y, l = ctx.dataset.label ?? '';
-                if (ctx.dataset.yAxisID === 'y2') return ` ${l}: ${v?.toFixed(2)}%`;
-                return ` ${l}: ${v?.toFixed(2)}`;
-            }}}
-        },
-        scales: {
-            x: { ticks:{font:{size:9},maxRotation:0,autoSkip:false}, grid:{color:'#f0f0f0'} },
-            y: {
-                position: 'left',
-                ticks: { font:{size:9}, callback: v => v?.toFixed(1) },
-                grid: { color:'#f0f0f0' },
-                title: { display:true, text:'Productivity', font:{size:8}, color:'#6b7280' }
-            },
-            y2: {
-                position: 'right',
-                ticks: { font:{size:9}, callback: v => v?.toFixed(1)+'%' },
-                grid: { drawOnChartArea:false },
-                title: { display:true, text:'Pass Rate (%)', font:{size:8}, color:'#6b7280' }
-            }
+    // Destroy Chart.js instance kalau ada
+    if (ytdChart) {
+        ytdChart.destroy();
+        ytdChart = null;
+    }
+
+    // Ganti canvas dengan div untuk ApexCharts
+        const parent = canvas.parentElement;
+        if (!document.getElementById('apexProdChart')) {
+            const div = document.createElement('div');
+            div.id = 'apexProdChart';
+            div.style.cssText = 'width:100%;height:100%;';
+            parent.appendChild(div);
         }
+        // Sembunyikan canvas, tampilkan div apex
+        canvas.style.display = 'none';
+        canvas.style.width   = '0';
+        canvas.style.height  = '0';
+        document.getElementById('apexProdChart').style.display = 'block';
+
+    // Destroy ApexCharts instance lama
+    if (apexProdChart) {
+        apexProdChart.destroy();
+        apexProdChart = null;
+    }
+
+    // Fiscal timestamps
+    function fiscalTs(fi) {
+        const m = ((fi + 3) % 12) + 1;
+        const y = (m >= 1 && m <= 3) ? yc + 1 : yc;
+        return new Date(y, m - 1, 1).getTime();
+    }
+    const ALL_FY_TS = MONTHS_FY.map((_, fi) => fiscalTs(fi));
+
+    const opts = {
+        chart: {
+            type: 'line',
+            height: '100%',
+            fontFamily: "'Segoe UI', sans-serif",
+            background: 'transparent',
+            toolbar: { show: false },
+            zoom: { enabled: false },
+            animations: { enabled: false },
+        },
+        series: [
+            { name: `Productivity FY${yc}`, type: 'bar',  data: ALL_FY_TS.map((t,i) => ({ x:t, y:merged.prod26[i] })) },
+            { name: `Productivity FY${yb}`, type: 'bar',  data: ALL_FY_TS.map((t,i) => ({ x:t, y:merged.prod25[i] })) },
+            { name: `Pass Rate FY${yc} (%)`, type: 'line', data: ALL_FY_TS.map((t,i) => ({ x:t, y:merged.pass26[i] })) },
+            { name: `Pass Rate FY${yb} (%)`, type: 'line', data: ALL_FY_TS.map((t,i) => ({ x:t, y:merged.pass25[i] })) },
+        ],
+        colors: ['#1500d1', '#8cbab7', '#F59E0B', '#ff5900'],
+        theme: { mode: 'light' },
+        grid: { borderColor: 'rgba(60,90,180,.3)', strokeDashArray: 2 },
+        legend: {
+            show: true, position: 'top', horizontalAlign: 'right',
+            fontSize: '9px', markers: { width: 10, height: 10 },
+        },
+        tooltip: {
+            shared: true, intersect: false,
+            y: { formatter: (val, { seriesIndex }) => {
+                if (val === null || val === undefined) return 'N/A';
+                const n = parseFloat(val); if (isNaN(n) || n === 0) return 'N/A';
+                return seriesIndex >= 2 ? n.toFixed(2) + '%' : n.toFixed(2);
+            }}
+        },
+        xaxis: {
+            type: 'datetime',
+            labels: {
+                style: { fontSize: '9px', colors: '#6b7280' },
+                datetimeUTC: false, format: 'MMM',
+                rotate: -30, rotateAlways: true,
+            },
+        },
+        plotOptions: { bar: { columnWidth: '80%', borderRadius: 0 } },
+        dataLabels: { enabled: false },
+        stroke: { width: [0, 0, 2.5, 2], curve: 'smooth' },
+        fill: { type: ['solid','solid','solid','solid'], opacity: [0.8, 0.5, 1, 1] },
+        markers: { size: [0, 0, 3, 3], strokeWidth: 2, strokeColor: '#fff', showNullDataPoints: false },
+        yaxis: [
+            {
+                title: { text: 'Productivity', style: { fontSize: '8px', color: '#6b7280' } },
+                labels: { style: { fontSize: '9px', colors: '#6b7280' }, formatter: v => v != null ? parseFloat(v).toFixed(1) : '' },
+                tickAmount: 5,
+            },
+            { show: false, tickAmount: 5 },
+            {
+                opposite: true,
+                title: { text: 'Pass Rate (%)', style: { fontSize: '8px', color: '#6b7280' } },
+                labels: { style: { fontSize: '9px', colors: '#6b7280' }, formatter: v => v != null ? parseFloat(v).toFixed(1) + '%' : '' },
+                tickAmount: 5,
+            },
+            { opposite: true, show: false, tickAmount: 5 },
+        ],
     };
 
-    if (ytdChart) {
-        ytdChart.data.labels   = MONTHS_FY;
-        ytdChart.data.datasets = datasets;
-        ytdChart.options       = options;
-        ytdChart.update();
-    } else {
-        ytdChart = new Chart(document.getElementById('chartKPI'), {
-            type: 'line', data: { labels: MONTHS_FY, datasets }, options
-        });
-    }
+    apexProdChart = new ApexCharts(document.getElementById('apexProdChart'), opts);
+    apexProdChart.render();
 }
 
 document.querySelectorAll('.ytd-kpi-tab').forEach(btn => {
@@ -649,8 +682,13 @@ document.querySelectorAll('.ytd-sec-tab').forEach(btn => {
     btn.addEventListener('click', () => {
         activeSec = btn.dataset.sec;
         updateSecTabs();
-        const key = activeKPI + '_' + YTD_YEAR;
-        if (ytdCache[key]) renderYTDChart(ytdCache[key]);
+        if (activeKPI === 'productivity') {
+            loadProductivityChart();
+        } else {
+            const key = activeKPI + '_' + YTD_YEAR;
+            if (ytdCache[key]) renderYTDChart(ytdCache[key]);
+            else loadYTD();
+        }
     });
     btn.addEventListener('mouseenter', () => {
         if (btn.dataset.sec !== activeSec) {

@@ -182,7 +182,6 @@ $page_title = 'KPI DETAIL — ' . strtoupper($kpi_tabs[$active_kpi]);
         }
 
     </style>
-    </style>
 </head>
 <body>
 <div class="dashboard">

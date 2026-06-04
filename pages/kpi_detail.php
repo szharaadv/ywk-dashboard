@@ -36,7 +36,8 @@ $page_title = 'KPI DETAIL — ' . strtoupper($kpi_tabs[$active_kpi]);
         }
 
         /* Selector row */
-        .selector-row { display:flex; align-items:center; gap:12px; flex-shrink:0; }
+        .selector-row { display:flex; align-items:center; gap:12px; flex-shrink:0; flex-wrap:wrap; }
+        .metric-emoji { font-size:32px; flex-shrink:0; margin-left:10px; line-height:1; }
         .kpi-selector-wrap, .line-filter-wrap { display:flex; align-items:center; gap:8px; }
         .kpi-selector-wrap label, .line-filter-wrap label {
             font-size:11px; font-weight:700; color:#6b7280;
@@ -144,7 +145,7 @@ $page_title = 'KPI DETAIL — ' . strtoupper($kpi_tabs[$active_kpi]);
         .row-badge-dot { width:8px; height:8px; border-radius:2px; flex-shrink:0; }
 
         /* Legend pills */
-        .legend-bar { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+        .legend-bar { display:flex; align-items:center; gap:10px; flex-wrap:wrap; flex-shrink:0; }
         .legend-pill { display:flex; align-items:center; gap:5px; font-size:10px; font-weight:600; color:#374151; }
         .lpill-dot  { width:10px; height:10px; border-radius:3px; flex-shrink:0; }
         .lpill-line { width:16px; height:2px; flex-shrink:0; }
@@ -190,36 +191,52 @@ $page_title = 'KPI DETAIL — ' . strtoupper($kpi_tabs[$active_kpi]);
 
     <div class="content-wrapper">
 
-        <!-- Selector row -->
-        <div class="selector-row">
-            <div class="kpi-selector-wrap">
-                <label>KPI:</label>
-                <select id="kpiSelect" onchange="onKpiChange()">
-                    <?php foreach ($kpi_tabs as $key => $label): ?>
-                    <option value="<?= $key ?>" <?= $active_kpi === $key ? 'selected' : '' ?>>
-                        <?= $label ?>
-                    </option>
-                    <?php endforeach; ?>
-                </select>
-            </div>
+            <!-- Selector row -->
+<div style="display:flex; align-items:center; gap:6px; flex-shrink:0; flex-wrap:wrap;">
+    <label style="font-size:11px; font-weight:700; color:#6b7280;
+                text-transform:uppercase; letter-spacing:.06em;">KPI:</label>
+    <div style="display:flex; gap:4px; flex-wrap:wrap;">
+        <?php foreach ($kpi_tabs as $key => $label): ?>
+        <button onclick="document.getElementById('kpiSelect').value='<?= $key ?>'; onKpiChange();"
+                style="font-size:11px; font-weight:700; padding:5px 12px;
+                    border-radius:20px; cursor:pointer; transition:all .15s;
+                    border:1.5px solid <?= $active_kpi === $key ? '#D0021B' : '#e5e7eb' ?>;
+                    background:<?= $active_kpi === $key ? '#D0021B' : '#fff' ?>;
+                    color:<?= $active_kpi === $key ? '#fff' : '#6b7280' ?>;"
+                id="kpibtn-<?= $key ?>"
+                onmouseover="if(this.style.background!='rgb(208, 2, 27)'){this.style.borderColor='#D0021B';this.style.color='#D0021B';}"
+                onmouseout="if(this.style.background!='rgb(208, 2, 27)'){this.style.borderColor='#e5e7eb';this.style.color='#6b7280';}">
+            <?= $label ?>
+        </button>
+        <?php endforeach; ?>
+    </div>
 
-            <div class="line-filter-wrap" id="lineFilterWrap" style="display:none">
-                <label>LINE:</label>
-                <select id="lineFilter" onchange="onLineChange()">
-                    <option value="">— Semua Line —</option>
-                </select>
-            </div>
-
-            <div class="legend-bar" id="legendBar" style="display:none">
-                <div class="legend-pill"><div class="lpill-dot" style="background:#1500d1"></div>Productivity FY26</div>
-                <div class="legend-pill"><div class="lpill-dot" style="background:#8cbab7"></div>Productivity FY25</div>
-                <div class="legend-pill"><div class="lpill-line" style="background:#F59E0B"></div>Pass Rate FY26</div>
-                <div class="legend-pill"><div class="lpill-line" style="background:#ff5900"></div>Pass Rate FY25</div>
-            </div>
+        <!-- Line filter — menyatu dalam selector row -->
+        <div class="line-filter-wrap" id="lineFilterWrap" style="display:none">
+            <label>LINE:</label>
+            <select id="lineFilter" onchange="onLineChange()">
+                <option value="">— Semua Line —</option>
+            </select>
         </div>
 
+        <!-- Legend pills — menyatu dalam selector row -->
+        <div class="legend-bar" id="legendBar" style="display:none">
+            <div class="legend-pill"><div class="lpill-dot" style="background:#1500d1"></div>Productivity FY26</div>
+            <div class="legend-pill"><div class="lpill-dot" style="background:#8cbab7"></div>Productivity FY25</div>
+            <div class="legend-pill"><div class="lpill-line" style="background:#F59E0B"></div>Pass Rate FY26</div>
+            <div class="legend-pill"><div class="lpill-line" style="background:#ff5900"></div>Pass Rate FY25</div>
+        </div>
+
+        <!-- Hidden select -->
+        <select id="kpiSelect" style="display:none;">
+            <?php foreach ($kpi_tabs as $key => $label): ?>
+            <option value="<?= $key ?>" <?= $active_kpi === $key ? 'selected' : '' ?>><?= $label ?></option>
+            <?php endforeach; ?>
+        </select>
+    </div>
+
         <!-- Metric cards -->
-        <div class="metrics-row" id="metricsRow">
+        <div class="metrics-row" id="metricsRow" style="display:grid;">
             <?php foreach (['ms1'=>'MS1','ms2'=>'MS2','conrod'=>'Conrod','hde'=>'HDE'] as $id => $label): ?>
             <div class="metric-card <?= $id ?>" id="mcard-<?= $id ?>">
             <div style="display:flex;align-items:center;justify-content:space-between;">
@@ -411,6 +428,13 @@ function clearMetricCards() {
 // ─── KPI CHANGE ──────────────────────────────────────────────────────────────
 function onKpiChange() {
     activeKpi = document.getElementById('kpiSelect').value;
+    // Update button styles
+    document.querySelectorAll('[id^="kpibtn-"]').forEach(btn => {
+        const isActive = btn.id === 'kpibtn-' + activeKpi;
+        btn.style.background   = isActive ? '#D0021B' : '#fff';
+        btn.style.borderColor  = isActive ? '#D0021B' : '#e5e7eb';
+        btn.style.color        = isActive ? '#fff'    : '#6b7280';
+    });
     destroyAllCharts();
     stopScrollTimers();
     if (activeKpi==='productivity_passrate') {
@@ -430,6 +454,7 @@ function onLineChange() {
 function showProdUI() {
     document.getElementById('lineFilterWrap').style.display = 'flex';
     document.getElementById('legendBar').style.display      = 'flex';
+    document.getElementById('metricsRow').style.display     = 'grid';
 }
 function showKpiUI() {
     document.getElementById('lineFilterWrap').style.display = 'none';

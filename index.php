@@ -1091,7 +1091,7 @@ function checkKPIAlert(gaps) {
 }
 
 // ===== KAIZEN ANALYTICS =====
-const KAIZEN_API = 'http://kaizen-dashboard.yadin.com/get_data.php';
+const KAIZEN_API = 'api/kaizen_proxy.php';
 let awarenessChart = null;
 let categoryChart  = null;
 let kaizenBulanAktif = 8;

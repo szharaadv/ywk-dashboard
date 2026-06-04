@@ -7,7 +7,7 @@ $api_params = http_build_query(array_filter([
 
 $page_title = 'YWK DASHBOARD';
 $ppm_total  = count(array_filter(
-    glob(__DIR__ . '/assets/ppm-slides/slide-*') ?: [],
+    glob($_SERVER['DOCUMENT_ROOT'] . '/ywk-dashboard/assets/ppm-slides/slide-*') ?: [],
     fn($f) => in_array(strtolower(pathinfo($f, PATHINFO_EXTENSION)), ['jpg', 'jpeg', 'png'])
 )) ?: 1;
 ?>
@@ -651,12 +651,12 @@ function renderProductivityChart(lineMap, sec) {
             animations: { enabled: false },
         },
         series: [
-            { name: `Productivity FY${yc}`, type: 'bar',  data: ALL_FY_TS.map((t,i) => ({ x:t, y:merged.prod26[i] })) },
             { name: `Productivity FY${yb}`, type: 'bar',  data: ALL_FY_TS.map((t,i) => ({ x:t, y:merged.prod25[i] })) },
-            { name: `Pass Rate FY${yc} (%)`, type: 'line', data: ALL_FY_TS.map((t,i) => ({ x:t, y:merged.pass26[i] })) },
+            { name: `Productivity FY${yc}`, type: 'bar',  data: ALL_FY_TS.map((t,i) => ({ x:t, y:merged.prod26[i] })) },
             { name: `Pass Rate FY${yb} (%)`, type: 'line', data: ALL_FY_TS.map((t,i) => ({ x:t, y:merged.pass25[i] })) },
+            { name: `Pass Rate FY${yc} (%)`, type: 'line', data: ALL_FY_TS.map((t,i) => ({ x:t, y:merged.pass26[i] })) },
         ],
-        colors: ['#1500d1', '#8cbab7', '#F59E0B', '#ff5900'],
+        colors: ['#8cbab7', '#1500d1', '#ff5900', '#F59E0B'],
         theme: { mode: 'light' },
         grid: { borderColor: 'rgba(60,90,180,.3)', strokeDashArray: 2 },
         legend: {

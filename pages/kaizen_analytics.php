@@ -12,21 +12,34 @@ $page_title = 'KAIZEN ANALYTICS';
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         ::-webkit-scrollbar { display:none; }
-        html, body { height:100vh; overflow:hidden; }
+        html, body { height:100vh; overflow:hidden; background:#f4f5f7; }
         .dashboard { height:100vh; display:flex; flex-direction:column; overflow:hidden; }
         .content-wrapper {
             flex:1; min-height:0; overflow:hidden;
             display:flex; flex-direction:column;
-            gap:0.5rem; padding:0.75rem;
+            gap:0.6rem; padding:0.75rem;
         }
 
-        /* Filter bar */
-        .ka-filter-bar {
-            display:flex; align-items:center; gap:8px;
-            flex-shrink:0; flex-wrap:wrap;
+        /* ── Header bar ── */
+        .ka-header {
+            display:flex; align-items:center; justify-content:space-between;
+            flex-shrink:0;
         }
-        .ka-filter-bar label {
-            font-size:11px; font-weight:700; color:#6b7280;
+        .ka-header-center {
+            text-align:center; flex:1;
+        }
+        .ka-header-title {
+            font-size:20px; font-weight:800; color:#1a1a1a; letter-spacing:.02em;
+        }
+        .ka-header-title span { font-weight:400; }
+
+        /* ── Filter bar ── */
+        .ka-filter-bar {
+            display:flex; align-items:center; justify-content:center;
+            gap:6px; flex-shrink:0; flex-wrap:wrap;
+        }
+        .ka-filter-label {
+            font-size:12px; font-weight:700; color:#374151;
             text-transform:uppercase; letter-spacing:.06em;
         }
         .ka-year-select {
@@ -37,49 +50,60 @@ $page_title = 'KAIZEN ANALYTICS';
             background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
             background-repeat:no-repeat; background-position:right 8px center;
         }
+        .ka-divider { width:1px; height:18px; background:#e5e7eb; }
         .ka-bulan-btn {
-            font-size:10px; font-weight:700; padding:4px 10px;
+            font-size:11px; font-weight:600; padding:5px 14px;
             border-radius:6px; cursor:pointer; transition:all .15s;
             border:1px solid #e5e7eb; background:#fff; color:#6b7280;
         }
         .ka-bulan-btn.active {
-            background:#D0021B; border-color:#D0021B; color:#fff;
+            background:#7B0000; border-color:#7B0000; color:#fff;
         }
+        .ka-bulan-btn:hover:not(.active) { border-color:#D0021B; color:#D0021B; }
 
-        /* Peak card */
+        /* ── Peak card ── */
         .ka-peak-card {
             display:flex; align-items:center; gap:10px;
             background:linear-gradient(135deg,#7B0000,#D0021B);
             border-radius:10px; padding:8px 16px; flex-shrink:0;
-            margin-left:auto;
         }
-        .ka-peak-label { font-size:9px; font-weight:800; color:rgba(255,255,255,.8); text-transform:uppercase; }
+        .ka-peak-label { font-size:9px; font-weight:800; color:rgba(255,255,255,.75); text-transform:uppercase; letter-spacing:.05em; }
         .ka-peak-dept  { font-size:11px; font-weight:700; color:#fff; }
-        .ka-peak-val   { font-size:22px; font-weight:800; color:#fbbf24; }
+        .ka-peak-val   { font-size:22px; font-weight:800; color:#fbbf24; line-height:1; }
 
-        /* Charts grid */
+        /* ── Charts grid ── */
         .ka-charts-grid {
-            display:grid; grid-template-columns:1fr 1fr;
-            gap:0.5rem; flex:1; min-height:0;
+            display:grid; grid-template-columns:1fr 1fr 1fr;
+            gap:0.75rem; flex:1; min-height:0;
         }
         .ka-chart-card {
-            background:#fff; border:1px solid #e5e7eb;
-            border-radius:10px; padding:0.75rem;
+            background:#fff;
+            border:1.5px solid #e5e7eb;
+            border-top:3px solid #D0021B;
+            border-radius:12px; padding:1rem;
             display:flex; flex-direction:column; min-height:0;
+            box-shadow:0 1px 4px rgba(0,0,0,0.04);
+        }
+        .ka-chart-header {
+            display:flex; align-items:center; justify-content:space-between;
+            margin-bottom:10px; flex-shrink:0;
         }
         .ka-chart-title {
-            font-size:10px; font-weight:700; color:#374151;
-            text-transform:uppercase; letter-spacing:.06em;
-            margin-bottom:6px; flex-shrink:0;
+            font-size:11px; font-weight:800; color:#1a1a1a;
+            text-transform:uppercase; letter-spacing:.07em;
             display:flex; align-items:center; gap:6px;
         }
         .ka-chart-title::before {
             content:''; width:3px; height:14px;
             background:#D0021B; border-radius:2px; flex-shrink:0;
         }
+        .ka-chart-sub {
+            font-size:9px; font-weight:400; color:#9ca3af;
+            margin-left:2px; text-transform:none; letter-spacing:0;
+        }
         .ka-chart-wrap { flex:1; position:relative; min-height:0; }
 
-        /* Modal */
+        /* ── Modal ── */
         .ka-modal-overlay {
             display:none; position:fixed; inset:0; z-index:9999;
             background:rgba(0,0,0,0.5);
@@ -98,23 +122,14 @@ $page_title = 'KAIZEN ANALYTICS';
             flex-shrink:0;
         }
         .ka-modal-title { font-size:13px; font-weight:800; }
-        .ka-modal-close {
-            background:none; border:none; color:#fff;
-            font-size:18px; cursor:pointer;
-        }
+        .ka-modal-close { background:none; border:none; color:#fff; font-size:18px; cursor:pointer; }
         .ka-modal-rekap {
             display:grid; grid-template-columns:1fr 1fr 1fr;
             border-bottom:1px solid #f0f0f0; flex-shrink:0;
         }
-        .ka-modal-rekap-item {
-            text-align:center; padding:12px 8px;
-            border-right:1px solid #f0f0f0;
-        }
+        .ka-modal-rekap-item { text-align:center; padding:12px 8px; border-right:1px solid #f0f0f0; }
         .ka-modal-rekap-item:last-child { border-right:none; }
-        .ka-modal-rekap-label {
-            font-size:9px; color:#6b7280;
-            text-transform:uppercase; margin-bottom:4px;
-        }
+        .ka-modal-rekap-label { font-size:9px; color:#6b7280; text-transform:uppercase; margin-bottom:4px; }
         .ka-modal-rekap-val { font-size:20px; font-weight:700; }
         .ka-modal-body { overflow-y:auto; flex:1; }
         .ka-modal-table { width:100%; border-collapse:collapse; font-size:12px; }
@@ -123,14 +138,19 @@ $page_title = 'KAIZEN ANALYTICS';
             font-size:10px; color:#6b7280; font-weight:700;
             background:#f4f5f7; position:sticky; top:0;
         }
-        .ka-modal-table td {
-            padding:8px 16px; border-bottom:1px solid #f0f0f0;
-        }
+        .ka-modal-table td { padding:8px 16px; border-bottom:1px solid #f0f0f0; }
         .ka-rank-badge {
             width:20px; height:20px; border-radius:50%;
             display:inline-flex; align-items:center; justify-content:center;
             font-size:10px; font-weight:700; color:#fff;
         }
+        .lihat-semua-btn {
+            font-size:10px; font-weight:700; padding:4px 12px;
+            border-radius:6px; border:1.5px solid #D0021B;
+            color:#D0021B; background:#fff; cursor:pointer;
+            transition:all .15s;
+        }
+        .lihat-semua-btn:hover { background:#D0021B; color:#fff; }
     </style>
 </head>
 <body>
@@ -140,30 +160,16 @@ $page_title = 'KAIZEN ANALYTICS';
 
     <div class="content-wrapper">
 
-        <!-- Filter Bar -->
-        <div class="ka-filter-bar">
-            <label>TAHUN:</label>
-            <select id="ka-tahun" class="ka-year-select" onchange="loadKaizenAnalytics()">
-                <option value="2024">2024</option>
-                <option value="2025" selected>2025</option>
-                <option value="2026">2026</option>
-            </select>
+        <!-- Header -->
+        <div class="ka-header">
+            <!-- Import btn kiri (placeholder slot) -->
+            <div style="min-width:120px;"></div>
 
-            <?php
-            $bulan_list = [
-                1=>'Jan',2=>'Feb',3=>'Mar',4=>'Apr',5=>'Mei',6=>'Jun',
-                7=>'Jul',8=>'Agu',9=>'Sep',10=>'Okt',11=>'Nov',12=>'Des'
-            ];
-            foreach ($bulan_list as $num => $label):
-            ?>
-            <button class="ka-bulan-btn <?= $num == 8 ? 'active' : '' ?>"
-                    id="kabtn-<?= $num ?>"
-                    onclick="setKaBulan(<?= $num ?>, this)">
-                <?= $label ?>
-            </button>
-            <?php endforeach; ?>
+            <div class="ka-header-center">
+                <div class="ka-header-title"><b>KAIZEN</b> <span>ANALYTICS SYSTEM</span></div>
+            </div>
 
-            <!-- Peak card -->
+            <!-- Peak card kanan -->
             <div class="ka-peak-card">
                 <div>
                     <div class="ka-peak-label">Peak Performance</div>
@@ -173,41 +179,60 @@ $page_title = 'KAIZEN ANALYTICS';
             </div>
         </div>
 
+        <!-- Filter Bar -->
+        <div class="ka-filter-bar">
+            <span class="ka-filter-label">TAHUN:</span>
+            <select id="ka-tahun" class="ka-year-select" onchange="loadKaizenAnalytics()">
+                <option value="2024">2024</option>
+                <option value="2025" selected>2025</option>
+                <option value="2026">2026</option>
+            </select>
+            <div class="ka-divider"></div>
+            <?php
+            $bulan_list = [
+                1=>'Jan',2=>'Feb',3=>'Mar',4=>'Apr',5=>'Mei',6=>'Jun',
+                7=>'Jul',8=>'Agu',9=>'Sep',10=>'Okt',11=>'Nov',12=>'Des'
+            ];
+            foreach ($bulan_list as $num => $label): ?>
+            <button class="ka-bulan-btn <?= $num == 8 ? 'active' : '' ?>"
+                    id="kabtn-<?= $num ?>"
+                    onclick="setKaBulan(<?= $num ?>, this)">
+                <?= $label ?>
+            </button>
+            <?php endforeach; ?>
+        </div>
+
         <!-- Charts -->
-        <div class="ka-charts-grid" style="grid-template-columns:1fr 1fr 1fr;">
+        <div class="ka-charts-grid">
+
             <!-- Awareness Ratio -->
             <div class="ka-chart-card">
-                <div class="ka-chart-title">
-                    Awareness Ratio
-                    <span style="font-size:9px;font-weight:400;color:#9ca3af;margin-left:4px;">
-                        *Klik nama departemen untuk detail
-                    </span>
+                <div class="ka-chart-header">
+                    <div class="ka-chart-title">
+                        Awareness Ratio
+                        <span class="ka-chart-sub">*Klik nama departemen untuk detail</span>
+                    </div>
                 </div>
                 <div class="ka-chart-wrap">
                     <canvas id="kaChartAwareness"></canvas>
                 </div>
             </div>
+
             <!-- Category Tendency -->
             <div class="ka-chart-card">
-                <div class="ka-chart-title">Category Tendency</div>
+                <div class="ka-chart-header">
+                    <div class="ka-chart-title">Category Tendency</div>
+                </div>
                 <div class="ka-chart-wrap">
                     <canvas id="kaChartCategory"></canvas>
                 </div>
-           </div>
+            </div>
 
             <!-- Top Score Employee -->
             <div class="ka-chart-card">
-                <div class="ka-chart-title" style="justify-content:space-between;">
-                    <span style="display:flex;align-items:center;gap:6px;">
-                        <span style="content:'';width:3px;height:14px;background:#D0021B;border-radius:2px;display:inline-block;"></span>
-                        Top Score Employee
-                    </span>
-                    <button onclick="openKaAllEmployee()"
-                        style="font-size:10px;font-weight:700;padding:3px 10px;
-                               border-radius:6px;border:1px solid #D0021B;
-                               color:#D0021B;background:#fff;cursor:pointer;">
-                        Lihat Semua
-                    </button>
+                <div class="ka-chart-header">
+                    <div class="ka-chart-title">Top Score Employee</div>
+                    <button class="lihat-semua-btn" onclick="openKaAllEmployee()">Lihat Semua</button>
                 </div>
                 <div class="ka-chart-wrap">
                     <canvas id="kaChartEmployee"></canvas>
@@ -219,7 +244,7 @@ $page_title = 'KAIZEN ANALYTICS';
     </div>
 </div>
 
-<!-- Modal Detail Karyawan -->
+<!-- Modal -->
 <div class="ka-modal-overlay" id="kaModal">
     <div class="ka-modal">
         <div class="ka-modal-header">
@@ -258,7 +283,7 @@ $page_title = 'KAIZEN ANALYTICS';
 </div>
 
 <script>
-const KAIZEN_PROXY       = '../api/kaizen_proxy.php';
+const KAIZEN_PROXY        = '../api/kaizen_proxy.php';
 const KAIZEN_DETAIL_PROXY = '../api/kaizen_detail_proxy.php';
 
 let kaBulanAktif      = 8;
@@ -269,9 +294,7 @@ let kaAllEmployeeData = [];
 
 function setKaBulan(angka, el) {
     kaBulanAktif = angka;
-    document.querySelectorAll('.ka-bulan-btn').forEach(b => {
-        b.classList.remove('active');
-    });
+    document.querySelectorAll('.ka-bulan-btn').forEach(b => b.classList.remove('active'));
     el.classList.add('active');
     loadKaizenAnalytics();
 }
@@ -287,7 +310,6 @@ async function loadKaizenAnalytics() {
         renderEmployeeChart(d.employee);
         kaAllEmployeeData = d.employee;
 
-        // Peak performance
         const processedValues = d.dept.labels.map((_, i) => {
             const ikut  = d.dept.karyawan_ikut[i]  || 0;
             const total = d.dept.total_karyawan[i] || 1;
@@ -321,10 +343,10 @@ function renderAwarenessChart(dept) {
             datasets: [{
                 label: 'Participation %',
                 data: processedValues,
-                borderColor: '#ef4444',
-                backgroundColor: 'rgba(239,68,68,0.15)',
+                borderColor: '#D0021B',
+                backgroundColor: 'rgba(208,2,27,0.1)',
                 borderWidth: 1.5,
-                pointRadius: 2,
+                pointRadius: 2.5,
                 pointBackgroundColor: '#D0021B',
             }]
         },
@@ -355,10 +377,10 @@ function renderAwarenessChart(dept) {
             scales: {
                 r: {
                     min: 0, max: 100,
-                    ticks: { font:{size:8}, stepSize:25, callback: v => v+'%', color:'#9ca3af' },
+                    ticks: { font:{size:8}, stepSize:20, callback: v => v+'%', color:'#9ca3af', backdropColor:'transparent' },
                     pointLabels: { font:{size:8}, color:'#374151' },
-                    grid: { color:'rgba(0,0,0,0.08)' },
-                    angleLines: { color:'rgba(0,0,0,0.08)' },
+                    grid: { color:'rgba(0,0,0,0.07)' },
+                    angleLines: { color:'rgba(0,0,0,0.07)' },
                 }
             }
         }
@@ -383,11 +405,11 @@ function renderCategoryChart(radar) {
             datasets: [{
                 label: 'Contribution Share',
                 data: processedValues,
-                borderColor: '#8b0000',
-                backgroundColor: 'rgba(139,0,0,0.15)',
+                borderColor: '#7B0000',
+                backgroundColor: 'rgba(123,0,0,0.15)',
                 borderWidth: 1.5,
-                pointRadius: 2,
-                pointBackgroundColor: '#8b0000',
+                pointRadius: 2.5,
+                pointBackgroundColor: '#7B0000',
             }]
         },
         options: {
@@ -405,10 +427,10 @@ function renderCategoryChart(radar) {
             scales: {
                 r: {
                     min: 0, max: 100,
-                    ticks: { font:{size:8}, stepSize:25, callback: v => v+'%', color:'#9ca3af' },
+                    ticks: { font:{size:8}, stepSize:20, callback: v => v+'%', color:'#9ca3af', backdropColor:'transparent' },
                     pointLabels: { font:{size:9}, color:'#374151' },
-                    grid: { color:'rgba(0,0,0,0.08)' },
-                    angleLines: { color:'rgba(0,0,0,0.08)' },
+                    grid: { color:'rgba(0,0,0,0.07)' },
+                    angleLines: { color:'rgba(0,0,0,0.07)' },
                 }
             }
         }
@@ -447,11 +469,7 @@ async function openKaModal(deptName) {
         }
         tbody.innerHTML = d.karyawan.map((k, i) => `
             <tr>
-                <td>
-                    <span class="ka-rank-badge" style="background:${i<3?'#D0021B':'#6b7280'}">
-                        ${i+1}
-                    </span>
-                </td>
+                <td><span class="ka-rank-badge" style="background:${i<3?'#D0021B':'#6b7280'}">${i+1}</span></td>
                 <td style="font-weight:600;">${k.nama_karyawan.trim()}</td>
                 <td style="text-align:center;font-weight:700;">${k.total_kaizen} Lembar</td>
             </tr>
@@ -463,7 +481,6 @@ async function openKaModal(deptName) {
     }
 }
 
-// Tutup modal klik backdrop
 document.getElementById('kaModal').addEventListener('click', function(e) {
     if (e.target === this) closeKaModal();
 });
@@ -474,7 +491,7 @@ function renderEmployeeChart(employee) {
     if (kaEmployeeChart) { kaEmployeeChart.destroy(); kaEmployeeChart = null; }
 
     if (!employee || !employee.labels || employee.labels.length === 0) {
-        ctx.parentElement.innerHTML = '<div style="text-align:center;color:#9ca3af;padding:20px;font-size:11px;">Belum ada data</div>';
+        ctx.parentElement.innerHTML = '<div style="text-align:center;color:#9ca3af;padding:20px;font-size:19px;">Belum ada data</div>';
         return;
     }
 
@@ -487,7 +504,7 @@ function renderEmployeeChart(employee) {
             labels: top5Labels,
             datasets: [{
                 data: top5Values,
-                backgroundColor: '#8b0000',
+                backgroundColor: '#7B0000',
                 borderRadius: 4,
             }]
         },
@@ -496,15 +513,10 @@ function renderEmployeeChart(employee) {
             maintainAspectRatio: false,
             plugins: {
                 legend: { display: false },
-                tooltip: { callbacks: {
-                    label: ctx => ` ${ctx.parsed.y} Poin`
-                }}
+                tooltip: { callbacks: { label: ctx => ` ${ctx.parsed.y} Poin` } }
             },
             scales: {
-                x: {
-                    display: false,
-                    ticks: { font:{size:9} }
-                },
+                x: { display: false },
                 y: {
                     beginAtZero: true,
                     ticks: { font:{size:9} },
@@ -519,13 +531,26 @@ function renderEmployeeChart(employee) {
                 chart.data.datasets.forEach((dataset, i) => {
                     chart.getDatasetMeta(i).data.forEach((bar, index) => {
                         const label = chart.data.labels[index];
+                        const barHeight = bar.base - bar.y;
+                        if (barHeight < 20) return;
+
                         ctx.save();
+
+                        // Clip agar teks tidak keluar dari bar
+                        ctx.beginPath();
+                        ctx.rect(bar.x - bar.width / 2, bar.y, bar.width, barHeight);
+                        ctx.clip();
+
                         ctx.fillStyle = '#ffffff';
-                        ctx.font = 'bold 9px Segoe UI';
-                        ctx.textAlign = 'center';
-                        ctx.translate(bar.x, bar.y + 10);
+                        ctx.font = 'bold 11px Segoe UI';
+                        ctx.textAlign = 'left';
+                        ctx.textBaseline = 'middle';
+
+                        // Mulai dari ~14px di bawah puncak bar
+                        ctx.translate(bar.x, bar.y + 130);
                         ctx.rotate(-Math.PI / 2);
                         ctx.fillText(label, 0, 0);
+
                         ctx.restore();
                     });
                 });
@@ -536,10 +561,8 @@ function renderEmployeeChart(employee) {
 
 function openKaAllEmployee() {
     if (!kaAllEmployeeData || !kaAllEmployeeData.labels) return;
-
     document.getElementById('kaModalTitle').textContent = 'LEADERBOARD SELURUH KARYAWAN';
     document.getElementById('kaModal').style.display = 'flex';
-
     document.getElementById('kaModalTotal').textContent  = kaAllEmployeeData.labels.length;
     document.getElementById('kaModalIkut').textContent   = '—';
     document.getElementById('kaModalPersen').textContent = '—';
@@ -549,21 +572,15 @@ function openKaAllEmployee() {
         tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;padding:20px;color:#9ca3af;">Belum ada data</td></tr>';
         return;
     }
-
     tbody.innerHTML = kaAllEmployeeData.labels.map((name, i) => `
         <tr>
-            <td>
-                <span class="ka-rank-badge" style="background:${i<3?'#D0021B':'#6b7280'}">
-                    ${i+1}
-                </span>
-            </td>
+            <td><span class="ka-rank-badge" style="background:${i<3?'#D0021B':'#6b7280'}">${i+1}</span></td>
             <td style="font-weight:600;">${name.trim()}</td>
             <td style="text-align:center;font-weight:700;">${kaAllEmployeeData.values[i]} Poin</td>
         </tr>
     `).join('');
 }
 
-// Load saat halaman buka
 loadKaizenAnalytics();
 </script>
 </body>

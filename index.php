@@ -161,12 +161,8 @@ $ppm_total  = count(array_filter(
                         </div>
                         <div style="display:flex; flex-direction:column;
                                     gap:3px; align-items:flex-end;">
-                            <div class="ytd-kpi-tabs">
-                                <button class="ytd-kpi-tab active" data-kpi="operation_ratio">OR</button>
-                                <button class="ytd-kpi-tab" data-kpi="safety">Safety</button>
-                                <button class="ytd-kpi-tab" data-kpi="fcost">F-Cost</button>
-                                <button class="ytd-kpi-tab" data-kpi="quality">Quality</button>
-                                <button class="ytd-kpi-tab" data-kpi="productivity">Productivity</button>
+                            <div style="font-size:10px; font-weight:700; color:#6b7280; text-transform:uppercase; letter-spacing:0.06em; align-self:center;">
+                                Productivity & Pass Rate
                             </div>
                             <div class="ytd-sec-tabs">
                                 <button class="ytd-sec-tab active" data-sec="MS1">MS1</button>
@@ -262,13 +258,13 @@ $ppm_total  = count(array_filter(
                         <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
                             <div>
                                 <div style="font-size:9px; font-weight:700; color:#374151; margin-bottom:4px; text-align:center;">AWARENESS RATIO</div>
-                                <div style="position:relative; height:160px;">
+                                <div style="position:relative; height:220px;">
                                     <canvas id="chartAwareness"></canvas>
                                 </div>
                             </div>
                             <div>
                                 <div style="font-size:9px; font-weight:700; color:#374151; margin-bottom:4px; text-align:center;">CATEGORY TENDENCY</div>
-                                <div style="position:relative; height:160px;">
+                                <div style="position:relative; height:220px;">
                                     <canvas id="chartCategory"></canvas>
                                 </div>
                             </div>
@@ -419,7 +415,7 @@ fetch('api/overview_summary.php' + QS)
     }).catch(() => {});
 
     let apexProdChart = null;
-    let ytdChart = null, ytdCache = {}, activeKPI = 'operation_ratio', activeSec = 'MS1';
+    let ytdChart = null, ytdCache = {}, activeKPI = 'productivity', activeSec = 'MS1';
 
 function ytdTooltipLabel(ctx, kpi) {
     const v = ctx.parsed.y, lbl = ctx.dataset.label ?? '';
@@ -707,15 +703,6 @@ function renderProductivityChart(lineMap, sec) {
     apexProdChart = new ApexCharts(document.getElementById('apexProdChart'), opts);
     apexProdChart.render();
 }
-
-document.querySelectorAll('.ytd-kpi-tab').forEach(btn => {
-    btn.addEventListener('click', () => {
-        document.querySelectorAll('.ytd-kpi-tab').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        activeKPI = btn.dataset.kpi;
-        loadYTD();
-    });
-});
 
 function updateSecTabs() {
     document.querySelectorAll('.ytd-sec-tab').forEach(b => {

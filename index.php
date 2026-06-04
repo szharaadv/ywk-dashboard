@@ -1,5 +1,5 @@
 <?php
-$year = $_GET['year'] ?? 'all';
+$year = $_GET['year'] ?? 'fy2026';
 
 $api_params = http_build_query(array_filter([
     'year' => $year !== 'all' ? $year : null,
@@ -360,21 +360,21 @@ fetch('api/overview_summary.php' + QS)
             const sign = diff >= 0 ? '+' : '';
             document.getElementById('kpi-or-sub').innerHTML =
                 `<span class="${diff>=0?'ok':'bad'}">${sign}${diff}% vs target</span>
-                 &nbsp;·&nbsp; ${or.periode}`;
+                 &nbsp;·&nbsp; <span style="font-size:9px;">${or.periode ?? ''}</span>`;
         }
         if (sf && sf.total !== null) {
     if (sf.days_safe > 0 && sf.total === 0) {
         document.getElementById('kpi-sf-actual').innerHTML =
             sf.days_safe + '<span style="font-size:13px;"> hari</span>';
         document.getElementById('kpi-sf-sub').innerHTML =
-            `<span class="ok">✓ Zero accident</span> &nbsp;·&nbsp; ${sf.periode}`;
+            `<span class="ok">✓ Zero accident</span> &nbsp;·&nbsp; <span style="font-size:9px;">${sf.periode ?? ''}</span>`;
     } else {
         document.getElementById('kpi-sf-actual').innerHTML =
             sf.total + '<span style="font-size:13px;"> accident</span>';
         document.getElementById('kpi-sf-sub').innerHTML =
             `<span class="${sf.total===0?'ok':'bad'}">
                 ${sf.total===0?'✓ Zero accident':'⚠ Ada insiden'}
-             </span> &nbsp;·&nbsp; ${sf.periode}`;
+             </span> &nbsp;·&nbsp; <span style="font-size:9px;">${sf.periode ?? ''}</span>`;
     }
 }
         if (ql && ql.actual !== null) {
@@ -383,7 +383,7 @@ fetch('api/overview_summary.php' + QS)
             document.getElementById('kpi-ql-sub').innerHTML =
                 `<span class="${ql.actual<=ql.target?'ok':'bad'}">
                     ${ql.actual<=ql.target?'✓ On target':'⚠ Over target'}
-                 </span> &nbsp;·&nbsp; ${ql.periode}`;
+                 </span> &nbsp;·&nbsp; <span style="font-size:9px;">${ql.periode ?? ''}</span>`;
         }
         if (fc && fc.actual !== null) {
             const fcJt = Math.round(fc.actual/1000000);
@@ -393,7 +393,7 @@ fetch('api/overview_summary.php' + QS)
             document.getElementById('kpi-fc-sub').innerHTML =
                 `<span class="${fc.actual<=fc.target?'ok':'bad'}">
                     ${fc.actual<=fc.target?'✓ Under target':'⚠ Over target'}
-                 </span> &nbsp;·&nbsp; Target Rp${tgJt}jt`;
+                 </span> &nbsp;·&nbsp; <span style="font-size:9px;">Target Rp${tgJt}jt</span>`;
         }
 
         const gaps = [];
@@ -402,7 +402,7 @@ fetch('api/overview_summary.php' + QS)
         if (sf?.total > 0)
             gaps.push({ label:'Safety', val:sf.total+' accident' });
         if (ql?.actual !== null && ql.actual > ql.target)
-            gaps.push({ label:'Quality', val:'+'+Math.round(ql.actual-ql.target).toLocaleString('id-ID')+' PPM' });
+            gaps.push({ label:'Quality', val:'+'+Math.round(ql.actual-ql.target).toLocaleString('id-ID')+' Part Per Million' });
         if (fc?.actual !== null && fc.actual > fc.target)
             gaps.push({ label:'F-Cost', val:'+Rp'+Math.round((fc.actual-fc.target)/1000000).toFixed(0)+'jt' });
 

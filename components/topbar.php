@@ -51,7 +51,7 @@ $year       = $_GET['year'] ?? 'all';
             <div class="kpi-glass-sub" id="kpi-sf-sub">Loading...</div>
         </div>
         <div class="kpi-glass">
-            <div class="kpi-glass-label">Quality (PPM avg)</div>
+            <div class="kpi-glass-label">Quality (Part Per Million avg)</div>
             <div class="kpi-glass-value" id="kpi-ql-actual">—</div>
             <div class="kpi-glass-sub" id="kpi-ql-sub">Loading...</div>
         </div>

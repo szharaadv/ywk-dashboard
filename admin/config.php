@@ -1,9 +1,9 @@
 <?php
 define('ADMIN_SESSION_KEY', 'ywk_admin');
-define('ADMIN_DB_HOST', 'db.yadin.com');
+define('ADMIN_DB_HOST', 'localhost');
 define('ADMIN_DB_NAME', 'ywk_dashboard');
-define('ADMIN_DB_USER', 'sintiara');
-define('ADMIN_DB_PASS', 'Yadin.456');
+define('ADMIN_DB_USER', 'root');
+define('ADMIN_DB_PASS', '');
 
 function getAdminDB() {
     static $pdo = null;

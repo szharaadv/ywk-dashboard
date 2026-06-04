@@ -5,7 +5,7 @@ requireAdminLogin();
 require_once __DIR__ . '/../config/db.php';
 
 $db           = getDB();
-$total_slides = count(array_filter(glob($_SERVER['DOCUMENT_ROOT'] . '/ywk-dashboard/assets/ppm-slides/slide-*') ?: [], fn($f) => in_array(strtolower(pathinfo($f, PATHINFO_EXTENSION)), ['jpg', 'jpeg', 'png'])));
+$total_slides = count(array_filter(glob(__DIR__ . '/../assets/ppm-slides/slide-*') ?: [], fn($f) => in_array(strtolower(pathinfo($f, PATHINFO_EXTENSION)), ['jpg', 'jpeg', 'png'])));
 $total_event  = $db->query("SELECT COUNT(*) FROM ywk_event")->fetchColumn();
 $total_kaizen = $db->query("SELECT COUNT(*) FROM kaizen_sheet")->fetchColumn();
 ?>
@@ -146,20 +146,13 @@ $total_kaizen = $db->query("SELECT COUNT(*) FROM kaizen_sheet")->fetchColumn();
             </div>
         </a>
         <a href="kaizen/index.php" class="menu-card">
-    <div class="menu-icon">💡</div>
-    <div>
-        <div class="menu-title">Kaizen Sheet</div>
-        <div class="menu-sub">
-            Upload data kaizen via Excel & kelola kaizen sheet
-        </div>
-        <div class="stat-badge">
-            <?php
-            $total_kaizen = $db->query("SELECT COUNT(*) FROM kaizen_sheet")->fetchColumn();
-            echo $total_kaizen;
-            ?> kaizen
-        </div>
-    </div>
-</a>
+            <div class="menu-icon">💡</div>
+            <div>
+                <div class="menu-title">Kaizen Sheet</div>
+                <div class="menu-sub">Upload data kaizen via Excel & kelola kaizen sheet</div>
+                <div class="stat-badge"><?= $total_kaizen ?> kaizen</div>
+            </div>
+        </a>
     </div>
 
     <div class="info-card">
@@ -187,14 +180,14 @@ $total_kaizen = $db->query("SELECT COUNT(*) FROM kaizen_sheet")->fetchColumn();
         <div class="info-row">
             <span>Dashboard URL</span>
             <span class="info-val">
-                <a href="/ywk-dashboard/index.php" style="color:#D0021B;" target="_blank">
+                <a href="/index.php" style="color:#D0021B;" target="_blank">
                     Buka Dashboard →
                 </a>
             </span>
         </div>
         <div class="info-row">
             <span>Admin Panel URL</span>
-            <span class="info-val">/ywk-dashboard/admin/</span>
+            <span class="info-val">/admin/</span>
         </div>
     </div>
 

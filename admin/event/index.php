@@ -2,8 +2,7 @@
 session_start();
 require_once '../config.php';
 requireAdminLogin();
-require_once $_SERVER['DOCUMENT_ROOT'] . '/ywk-dashboard/config/db.php';
-
+require_once __DIR__ . '/../../config/db.php';
 $db = getDB();
 
 // Handle delete
@@ -13,7 +12,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_id'])) {
     $stmt->execute([$id]);
     $ev = $stmt->fetch();
     if ($ev && $ev['foto']) {
-        $path = $_SERVER['DOCUMENT_ROOT'] . '/ywk-dashboard/assets/img/' . $ev['foto'];
+        $path = __DIR__ . '/../../assets/img/' . $ev['foto'];
         if (file_exists($path)) unlink($path);
     }
     $db->prepare("DELETE FROM ywk_event WHERE id = ?")->execute([$id]);
@@ -161,7 +160,7 @@ $events = $db->query("
                 <tr>
                     <td>
                         <?php if ($ev['foto']): ?>
-                            <img src="/ywk-dashboard/assets/img/<?= htmlspecialchars($ev['foto']) ?>"
+                            <img src="/assets/img/...">
                                  class="thumb"
                                  onerror="this.style.display='none'">
                         <?php else: ?>

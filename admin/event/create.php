@@ -2,7 +2,7 @@
 session_start();
 require_once '../config.php';
 requireAdminLogin();
-require_once $_SERVER['DOCUMENT_ROOT'] . '/ywk-dashboard/config/db.php';
+require_once __DIR__ . '/../../config/db.php';
 
 $db    = getDB();
 $error = '';
@@ -30,7 +30,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $error = 'Ukuran foto maksimal 5MB.';
         } else {
             $foto_name = 'event_' . date('Ymd') . '_' . rand(1000, 9999) . '.' . $ext;
-            $dest      = $_SERVER['DOCUMENT_ROOT'] . '/ywk-dashboard/assets/img/' . $foto_name;
+            $dest = __DIR__ . '/../../assets/img/' . $foto_name;
             if (!move_uploaded_file($_FILES['foto']['tmp_name'], $dest)) {
                 $error     = 'Gagal menyimpan foto. Cek permission folder assets/img/';
                 $foto_name = null;

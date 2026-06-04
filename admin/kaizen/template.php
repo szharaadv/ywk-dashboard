@@ -1,6 +1,6 @@
 <?php
 session_start();
-require_once '../config.php';
+require_once __DIR__ . '/../../config/db.php';
 requireAdminLogin();
 
 header('Content-Type: text/csv; charset=UTF-8');

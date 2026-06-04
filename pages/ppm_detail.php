@@ -2,7 +2,7 @@
 $is_detail  = true;
 $page_title = 'PPM DETAIL';
 $total_slides = count(array_filter(
-    glob($_SERVER['DOCUMENT_ROOT'] . '/ywk-dashboard/assets/ppm-slides/slide-*') ?: [],
+    glob(__DIR__ . '/../assets/ppm-slides/slide-*') ?: [],
     fn($f) => in_array(strtolower(pathinfo($f, PATHINFO_EXTENSION)), ['jpg', 'jpeg', 'png'])
 )) ?: 1;
 $current = max(1, min($total_slides, (int)($_GET['slide'] ?? 1)));
@@ -48,7 +48,7 @@ $current = max(1, min($total_slides, (int)($_GET['slide'] ?? 1)));
             </div>
             <div style="display:flex; align-items:center; gap:10px;">
                 <span style="font-size:11px; color:#9ca3af;"><?= $total_slides ?> slides</span>
-                <a href="/ywk-dashboard/assets/ppm-slides/slide-<?= str_pad($current, 2, '0', STR_PAD_LEFT) ?>.jpg"
+                <a href="/assets/ppm-slides/slide-<?= str_pad($current, 2, '0', STR_PAD_LEFT) ?>.jpg"
                    download
                    style="font-size:11px; color:#185FA5; text-decoration:none;
                           font-weight:500; background:#E6F1FB;

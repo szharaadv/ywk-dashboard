@@ -25,7 +25,7 @@ function isAdminLoggedIn() {
 
 function requireAdminLogin() {
     if (!isAdminLoggedIn()) {
-        header('Location: /ywk-dashboard/admin/login.php');
+        header('Location: /admin/login.php');
         exit;
     }
 }

@@ -7,7 +7,7 @@ $api_params = http_build_query(array_filter([
 
 $page_title = 'YWK DASHBOARD';
 $ppm_total  = count(array_filter(
-    glob($_SERVER['DOCUMENT_ROOT'] . '/ywk-dashboard/assets/ppm-slides/slide-*') ?: [],
+    glob(__DIR__ . '/assets/ppm-slides/slide-*') ?: [],
     fn($f) => in_array(strtolower(pathinfo($f, PATHINFO_EXTENSION)), ['jpg', 'jpeg', 'png'])
 )) ?: 1;
 ?>

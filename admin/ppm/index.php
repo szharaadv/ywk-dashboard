@@ -3,7 +3,7 @@ session_start();
 require_once '../config.php';
 requireAdminLogin();
 
-$slideDir  = $_SERVER['DOCUMENT_ROOT'] . '/ywk-dashboard/assets/ppm-slides/';
+$slideDir = __DIR__ . '/../../assets/ppm-slides/';
 $uploadMsg = '';
 $uploadErr = '';
 
@@ -234,7 +234,7 @@ if (count($_FILES['slides']['name']) > $MAX_SLIDES) {
             <div class="slide-grid">
                 <?php foreach ($currentSlides as $i => $slide): ?>
                 <div class="slide-item">
-                    <img src="/ywk-dashboard/assets/ppm-slides/<?= basename($slide) ?>"
+                    <img src="/assets/ppm-slides/...<?= basename($slide) ?>"
                          alt="Slide <?= $i+1 ?>"
                          loading="lazy">
                     <div class="slide-num">Slide <?= $i+1 ?></div>

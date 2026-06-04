@@ -2,7 +2,7 @@
 session_start();
 require_once '../config.php';
 requireAdminLogin();
-require_once $_SERVER['DOCUMENT_ROOT'] . '/ywk-dashboard/config/db.php';
+require_once __DIR__ . '/../../config/db.php';
 $db = getDB();
 
 $total_or = $db->query("SELECT COUNT(*) FROM kpi_operation_ratio WHERE YEAR(periode) >= 2026")->fetchColumn();
@@ -118,7 +118,7 @@ $total_or = $db->query("SELECT COUNT(*) FROM kpi_operation_ratio WHERE YEAR(peri
         <div class="info-row">
             <span>Dashboard URL</span>
             <span class="info-val">
-                <a href="/ywk-dashboard/index.php" style="color:#D0021B;" target="_blank">
+                <a href="/index.php" style="color:#D0021B;" target="_blank">
                     Buka Dashboard →
                 </a>
             </span>

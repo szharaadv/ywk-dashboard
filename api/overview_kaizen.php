@@ -30,12 +30,11 @@ $top_kaizen = $db->query("
     LIMIT 1
 ")->fetch();
 
-// Top 5 list
+// All kaizen list
 $top5 = $db->query("
     SELECT judul, section, purposed, score, status, category
     FROM kaizen_sheet
     ORDER BY score DESC
-    LIMIT 10
 ")->fetchAll();
 
 // Mapping kompatibilitas frontend

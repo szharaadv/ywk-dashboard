@@ -14,6 +14,11 @@ $page_title = 'KAIZEN SHEET';
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Kaizen Detail — YWK Dashboard</title>
     <link rel="stylesheet" href="../assets/css/style.css">
+    <style>
+        html, body { height:100vh; overflow:hidden; }
+        .dashboard { height:100vh; display:flex; flex-direction:column; overflow:hidden; }
+        .content-wrapper { flex:1; min-height:0; overflow:hidden; display:flex; flex-direction:column; gap:0.5rem; padding:0.75rem; }
+    </style>
 </head>
 <body>
 <div class="dashboard">
@@ -94,7 +99,7 @@ $page_title = 'KAIZEN SHEET';
         </div>
 
         <!-- Kaizen Table -->
-        <div class="card" style="padding:0;">
+        <div class="card" style="padding:0; flex:1; min-height:0; overflow-y:auto;">
             <table class="kaizen-table" style="width:100%;">
                 <thead>
                     <tr>

@@ -41,7 +41,7 @@ $page_title = 'YWK EVENT';
                 <div class="metric-sub">Competed</div>
             </div>
             <div class="metric-card">
-                <div class="metric-label">Total Departements</div>
+                <div class="metric-label">Participates</div>
                 <div class="metric-value" id="ev-total-dept">—</div>
                 <div class="metric-sub">Participating</div>
             </div>

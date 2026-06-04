@@ -202,7 +202,7 @@ $ppm_total  = count(array_filter(
                     </div>
                     <div class="kaizen-top-banner" id="kaizen-top-banner"
                          style="flex-shrink:0;">Loading...</div>
-                    <div style="flex:1; min-height:0; overflow:hidden;">
+                    <div style="flex:1; min-height:0; overflow-y:auto;">
                         <table class="kaizen-table">
                             <thead>
                                 <tr>
@@ -227,6 +227,7 @@ $ppm_total  = count(array_filter(
                     <div style="flex-shrink:0; border-top:1px solid #f0f0f0; padding-top:8px; margin-top:6px;">
                         <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:6px; flex-wrap:wrap; gap:4px;">
                             <div style="font-size:10px; font-weight:700; color:#6b7280; text-transform:uppercase; letter-spacing:0.05em;">Kaizen Analytics</div>
+                                <a href="pages/kaizen_analytics.php" class="detail-link">Detail →</a>
                             <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
                                 <!-- Filter Tahun -->
                                 <select id="kaizen-filter-tahun" onchange="loadKaizenAnalytics()"
@@ -1242,7 +1243,7 @@ async function openKaizenDeptDetail(deptName) {
         const bulan   = kaizenBulanAktif;
 
         const r = await fetch(
-            `http://kaizen-dashboard.yadin.com/get_detail_karyawan.php?dept=${encodeURIComponent(deptName)}&bulan=${bulan}&tahun=${tahun}`
+            `api/kaizen_detail_proxy.php?dept=${encodeURIComponent(deptName)}&bulan=${bulan}&tahun=${tahun}`
         );
         const d = await r.json();
 

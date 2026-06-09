@@ -13,10 +13,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['slides'])) {
     $uploaded = 0;
     $errors   = [];
 
-    // Hapus semua slide lama
-    foreach (glob($slideDir . 'slide-*.jpg') as $old) {
+    // Hapus semua slide lama (jpg, jpeg, png)
+foreach (glob($slideDir . 'slide-*') as $old) {
+    $ext = strtolower(pathinfo($old, PATHINFO_EXTENSION));
+    if (in_array($ext, ['jpg', 'jpeg', 'png'])) {
         unlink($old);
     }
+}
 SKIP_UPLOAD:
 
     // Kumpulkan & sort berdasarkan nama file

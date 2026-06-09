@@ -73,6 +73,13 @@ $page_title = 'KPI DETAIL — ' . strtoupper($kpi_tabs[$active_kpi]);
         .metric-value { font-size:24px; font-weight:700; color:#1a1a1a; line-height:1; }
         .metric-sub   { font-size:10px; margin-top:4px; }
         .metric-trend { font-size:10px; margin-top:3px; font-weight:600; }
+        .metric-split { display:flex; align-items:stretch; gap:0; margin-top:6px; }
+        .metric-split-left  { flex:1; min-width:0; }
+        .metric-split-divider { width:1px; background:#e5e7eb; margin:0 12px; flex-shrink:0; }
+        .metric-split-right { flex:1; min-width:0; }
+        .metric-split-label { font-size:9px; color:#9ca3af; text-transform:uppercase; letter-spacing:.05em; margin-bottom:2px; }
+        .metric-split-val   { font-size:20px; font-weight:700; color:#1a1a1a; line-height:1.1; }
+        .metric-split-val.pass-rate { font-size:18px; color:#185FA5; }
 
         /* Section grid */
         .section-grid {
@@ -238,20 +245,32 @@ $page_title = 'KPI DETAIL — ' . strtoupper($kpi_tabs[$active_kpi]);
         <!-- Metric cards -->
         <div class="metrics-row" id="metricsRow" style="display:grid;">
             <?php foreach (['ms1'=>'MS1','ms2'=>'MS2','conrod'=>'Conrod','hde'=>'HDE'] as $id => $label): ?>
-            <div class="metric-card <?= $id ?>" id="mcard-<?= $id ?>">
-            <div style="display:flex;align-items:center;justify-content:space-between;">
-                <div style="flex:1;min-width:0;">
-                    <div class="metric-label"><?= $label ?></div>
+                <div class="metric-card <?= $id ?>" id="mcard-<?= $id ?>">
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
+                    <div class="metric-label" id="metric-<?= $id ?>-label"><?= $label ?></div>
+                    <div class="metric-emoji" id="metric-<?= $id ?>-emoji">➖</div>
+                </div>
+                <div id="metric-<?= $id ?>-normal">
                     <div class="metric-value" id="metric-<?= $id ?>">—</div>
                     <div class="metric-sub"   id="metric-<?= $id ?>-sub"></div>
                     <div class="metric-trend" id="metric-<?= $id ?>-trend"></div>
                 </div>
-                <div class="metric-emoji" id="metric-<?= $id ?>-emoji">➖</div>
+                <div id="metric-<?= $id ?>-split" style="display:none;">
+                    <div class="metric-split">
+                        <div class="metric-split-left">
+                            <div class="metric-split-label">Productivity avg</div>
+                            <div class="metric-split-val" id="metric-<?= $id ?>-prodval">—</div>
+                        </div>
+                        <div class="metric-split-divider"></div>
+                        <div class="metric-split-right">
+                            <div class="metric-split-label">Pass Rate avg</div>
+                            <div class="metric-split-val pass-rate" id="metric-<?= $id ?>-passrate">—%</div>
+                        </div>
+                    </div>
+                </div>
             </div>
-        </div>
             <?php endforeach; ?>
-        </div>
-
+            </div>
         <div id="errorBanner" class="error-msg" style="display:none;"></div>
 
         <!-- Section grid -->
@@ -350,7 +369,7 @@ function getPrevNonNull(arr) {
 // ─── FORMAT ──────────────────────────────────────────────────────────────────
 function fmtKpi(val,kpi) {
     if (val===null||val===undefined) return '—';
-    if (kpi==='fcost')           return 'Rp '+Number(val).toLocaleString('id-ID');
+    if (kpi==='fcost') return (val?.toFixed(2) ?? '—')+'%';
     if (kpi==='operation_ratio') return val+'%';
     if (kpi==='quality')         return Number(val).toLocaleString('id-ID')+' Part per Million';
     if (kpi==='safety')          return val+' case';
@@ -376,7 +395,7 @@ function getTrendLabel(cur,prev,kpi) {
     const isGood=(kpi==='fcost'||kpi==='quality')?diff<0:diff>0;
     const color=isGood?'#3B6D11':'#D0021B',arrow=diff>0?'▲':'▼';
     let ds='',ps='';
-    if (kpi==='fcost'){const ab=Math.abs(Math.round(diff));ds=ab>=1e6?'Rp '+(ab/1e6).toFixed(1)+' jt':'Rp '+ab.toLocaleString('id-ID');ps='Rp '+(Math.round(prev)/1e6).toFixed(1)+' jt';}
+    if (kpi==='fcost'){ds=Math.abs(diff).toFixed(2)+'%';ps=prev.toFixed(2)+'%';}
     else if(kpi==='quality'){ds=Math.abs(Math.round(diff)).toLocaleString('id-ID')+' PPM';ps=Math.round(prev).toLocaleString('id-ID')+' PPM';}
     else if(kpi==='safety'){ds=Math.abs(Math.round(diff))+' case';ps=Math.round(prev)+' case';}
     else{const ab=Math.abs(parseFloat(diff.toFixed(1)));ds=(isGood?'📈':'📉')+' '+ab+'%';ps=parseFloat(prev.toFixed(1))+'%';}
@@ -455,11 +474,37 @@ function showProdUI() {
     document.getElementById('lineFilterWrap').style.display = 'flex';
     document.getElementById('legendBar').style.display      = 'flex';
     document.getElementById('metricsRow').style.display     = 'grid';
+    ['ms1','ms2','conrod','hde'].forEach(id => {
+        document.getElementById('metric-'+id+'-normal').style.display = 'none';
+        document.getElementById('metric-'+id+'-split').style.display  = 'block';
+    });
 }
 function showKpiUI() {
     document.getElementById('lineFilterWrap').style.display = 'none';
     document.getElementById('legendBar').style.display      = 'none';
     document.getElementById('metricsRow').style.display     = 'grid';
+
+    // ← INI yang harus ada — toggle balik ke mode normal
+    ['ms1','ms2','conrod','hde'].forEach(id => {
+        document.getElementById('metric-'+id+'-normal').style.display = 'block';
+        document.getElementById('metric-'+id+'-split').style.display  = 'none';
+    });
+
+    // Hide MS1 & MS2 card + mcard saat F-Cost
+    ['ms1','ms2','conrod','hde'].forEach(sid => {
+        const show  = activeKpi !== 'fcost' || sid === 'conrod' || sid === 'hde';
+        const card  = document.getElementById('card-'+sid);
+        const mcard = document.getElementById('mcard-'+sid);
+        if (card)  card.style.display  = show ? '' : 'none';
+        if (mcard) mcard.style.display = show ? '' : 'none';
+    });
+
+    // Sesuaikan jumlah kolom grid
+    const isFcost = activeKpi === 'fcost';
+    document.getElementById('metricsRow').style.gridTemplateColumns =
+        isFcost ? 'repeat(2,minmax(0,1fr))' : 'repeat(4,minmax(0,1fr))';
+    document.getElementById('sectionGrid').style.gridTemplateColumns =
+        isFcost ? 'repeat(2,minmax(0,1fr))' : 'repeat(4,minmax(0,1fr))';
 
     ['ms1','ms2','conrod','hde'].forEach(sid => {
         document.getElementById('card-'+sid)?.classList.remove('dimmed');
@@ -672,12 +717,15 @@ async function loadProductivity() {
             const allR26=Object.values(lineMap).flatMap(ld=>ld.pass26).filter(v=>v!==null);
             const avgP=allP26.length?(allP26.reduce((a,b)=>a+b,0)/allP26.length).toFixed(2):'—';
             const avgR=allR26.length?(allR26.reduce((a,b)=>a+b,0)/allR26.length).toFixed(2):'—';
-            setMetricCard(sid,avgP,escH(loc.name),
-                `<span style="color:#6b7280">Pass Rate avg: <strong>${avgR}%</strong></span>`);
+            setMetricCard(sid, avgP, escH(loc.name), '');
+            const prodEl = document.getElementById('metric-'+sid+'-prodval');
+            if (prodEl) prodEl.textContent = avgP;
+            const prEl = document.getElementById('metric-'+sid+'-passrate');
+            if (prEl) prEl.textContent = avgR !== '—' ? avgR + '%' : '—%';
             const mlabel = document.querySelector('#mcard-'+sid+' .metric-label');
             if (mlabel) mlabel.textContent = loc.name.toUpperCase();
             const emojiEl = document.getElementById('metric-'+sid+'-emoji');
-            if (emojiEl) emojiEl.textContent = '📊';
+            if (emojiEl) emojiEl.style.display = 'none';
 
             // Setup prod scroll container
             const fill=document.getElementById('chartfill-'+sid);
@@ -703,6 +751,8 @@ async function loadProductivity() {
 
             // Render tiap line
             for (const [idx,lineName] of lineNames.entries()) {
+            // Khusus Assembly (lid=4): hanya tampilkan "Assembly Line"
+            if (lid === '4' && lineName !== 'Assembly Line') continue;
             const ld      = lineMap[lineName];
             const chartId = `apex-${lid}-${idx}`;
 
@@ -818,13 +868,23 @@ function buildKpiDatasets(json,section,kpi) {
     const curFY=json.cur_fy??'FY2026',prevFY=json.prev_fy??'FY2025';
     if (!data[section]) return [];
 
-    if (kpi==='operation_ratio'||kpi==='fcost') {
+    if (kpi==='operation_ratio') {
         const ds=[
             {label:`Actual ${curFY}`,data:data[section].actual??[],borderColor:color,backgroundColor:color+'18',borderWidth:2.5,pointRadius:4,pointHoverRadius:6,tension:.3,fill:true,spanGaps:false},
             {label:`Target ${curFY}`,data:data[section].target??[],borderColor:'#e53935',borderWidth:1.5,borderDash:[5,4],pointRadius:0,tension:0,fill:false,spanGaps:true,backgroundColor:'transparent'},
         ];
         if (compare&&dataPrev&&dataPrev[section])
             ds.push({label:`Actual ${prevFY}`,data:dataPrev[section].actual??[],borderColor:'#b0b0b0',backgroundColor:'transparent',borderWidth:1.5,borderDash:[3,3],pointRadius:2,pointHoverRadius:4,tension:.3,fill:false,spanGaps:false});
+        return ds;
+    }
+    if (kpi==='fcost') {
+        const tgtPct = data[section].pct_target ?? 0.15;
+        const ds=[
+            {label:`Actual ${curFY}`,data:data[section].pct??[],borderColor:color,backgroundColor:color+'18',borderWidth:2.5,pointRadius:4,pointHoverRadius:6,tension:.3,fill:true,spanGaps:false},
+            {label:`Target ${curFY}`,data:new Array(12).fill(tgtPct),borderColor:'#e53935',borderWidth:1.5,borderDash:[5,4],pointRadius:0,tension:0,fill:false,spanGaps:true,backgroundColor:'transparent'},
+        ];
+        if (compare&&dataPrev&&dataPrev[section])
+            ds.push({label:`Actual ${prevFY}`,data:dataPrev[section].pct??[],borderColor:'#b0b0b0',backgroundColor:'transparent',borderWidth:1.5,borderDash:[3,3],pointRadius:2,pointHoverRadius:4,tension:.3,fill:false,spanGaps:false});
         return ds;
     }
     if (kpi==='safety') {
@@ -857,7 +917,7 @@ function makeKpiChartOpts(kpi,datasets) {
             legend:{display:true,position:'top',align:'end',labels:{font:{size:9},boxWidth:18,padding:6,usePointStyle:true}},
             tooltip:{callbacks:{label:ctx=>{
                 const v=ctx.parsed.y,l=ctx.dataset.label??'';
-                if(kpi==='fcost')           return ` ${l}: Rp ${Number(v).toLocaleString('id-ID')}`;
+                if(kpi==='fcost')           return ` ${l}: ${v?.toFixed(2)}%`;
                 if(kpi==='operation_ratio') return ` ${l}: ${v}%`;
                 if(kpi==='quality')         return ` ${l}: ${Number(v).toLocaleString('id-ID')} Part per Million`;
                 return ` ${l}: ${Number(v).toLocaleString('id-ID')}`;
@@ -865,12 +925,17 @@ function makeKpiChartOpts(kpi,datasets) {
         },
         scales:{
             x:{ticks:{font:{size:9},maxRotation:0,autoSkip:true,maxTicksLimit:12},grid:{color:'#f0f0f0'}},
-            y:{min:yAxis.min,max:yAxis.max,ticks:{font:{size:9},callback:v=>{
-                if(kpi==='fcost')           return 'Rp'+(v/1e6).toFixed(0)+'jt';
-                if(kpi==='operation_ratio') return v+'%';
-                if(kpi==='quality')         return Number(v).toLocaleString('id-ID');
-                return v;
-            }},grid:{color:'#f0f0f0'}}
+            y:{
+                min: kpi==='fcost' ? 0 : yAxis.min,
+                max: kpi==='fcost' ? null : yAxis.max,
+                ticks:{font:{size:9},callback:v=>{
+                    if(kpi==='fcost')           return v?.toFixed(2)+'%';
+                    if(kpi==='operation_ratio') return v+'%';
+                    if(kpi==='quality')         return Number(v).toLocaleString('id-ID');
+                    return v;
+                }},
+                grid:{color:'#f0f0f0'}
+            }
         }
     };
 }
@@ -883,15 +948,18 @@ function fillKpiTable(json,section,kpi) {
     const curFY=json.cur_fy??'FY2026',prevFY=json.prev_fy??'FY2025';
     if (!tbody||!data[section]) return;
 
-    const fmt=v=>{
+    const fmt=(v,overrideKpi)=>{
+        const k = overrideKpi ?? kpi;
         if(v===null||v===undefined) return '<span style="color:#d1d5db">—</span>';
-        if(kpi==='operation_ratio') return v.toFixed(1)+'%';
-        if(kpi==='fcost')           return 'Rp'+(v/1e6).toFixed(1)+'jt';
-        if(kpi==='quality')         return Number(v).toLocaleString('id-ID');
+        if(k==='operation_ratio') return v.toFixed(1)+'%';
+        if(k==='fcost_pct')       return v.toFixed(2)+'%';
+        if(k==='fcost_nominal')   return 'Rp'+Number(v).toLocaleString('id-ID');
+        if(k==='quality')         return Number(v).toLocaleString('id-ID');
         return v;
     };
-    const mkRow=(lbl,arr,dot,bold=false)=>{
-        const cells=arr.map(v=>`<td style="text-align:center;padding:2px 4px;border-bottom:1px solid #f0f0f0;font-weight:${bold?'700':'400'};color:${v===null?'#d1d5db':'#1a1a1a'}">${fmt(v)}</td>`).join('');
+
+    const mkRow=(lbl,arr,dot,bold=false,overrideKpi=null)=>{
+        const cells=arr.map(v=>`<td style="text-align:center;padding:2px 4px;border-bottom:1px solid #f0f0f0;font-weight:${bold?'700':'400'};color:${v===null?'#d1d5db':'#1a1a1a'}">${fmt(v,overrideKpi)}</td>`).join('');
         return `<tr>
             <td style="padding:2px 6px;border-bottom:1px solid #f0f0f0;white-space:nowrap;display:flex;align-items:center;gap:4px;">
                 <span style="width:8px;height:8px;border-radius:50%;background:${dot};display:inline-block;flex-shrink:0"></span>
@@ -900,21 +968,30 @@ function fillKpiTable(json,section,kpi) {
     };
 
     let rows='';
-    if (kpi==='operation_ratio'||kpi==='fcost') {
+    if (kpi==='operation_ratio') {
         rows+=mkRow(`Target ${curFY}`,data[section].target??[],'#e53935');
         rows+=mkRow(`Actual ${curFY}`,data[section].actual??[],color,true);
         if (compare&&dataPrev&&dataPrev[section])
             rows+=mkRow(`Actual ${prevFY}`,dataPrev[section].actual??[],'#b0b0b0');
+    } else if (kpi==='fcost') {
+        const pctTarget = data[section].pct_target ?? 0.15;
+        rows+=mkRow(`Target (%)`, new Array(12).fill(pctTarget), '#e53935', false, 'fcost_pct');
+        rows+=mkRow(`Actual (%)`, data[section].pct??[], color, true, 'fcost_pct');
+        rows+=mkRow(`Cost Reject`, data[section].actual??[], '#b0b0b0', false, 'fcost_nominal');
+        rows+=mkRow(`Sales`, data[section].sales??[], '#9ca3af', false, 'fcost_nominal');
+        if (compare&&dataPrev&&dataPrev[section])
+            rows+=mkRow(`Actual % ${prevFY}`, dataPrev[section].pct??[], '#d1d5db', false, 'fcost_pct');
     } else if (kpi==='quality') {
         rows+=mkRow(`Target ${curFY}`, data[section].reject_target??[], '#e53935');
         rows+=mkRow(`Actual ${curFY}`, data[section].reject_inhouse??[], color, true);
         if (compare&&dataPrev&&dataPrev[section])
             rows+=mkRow(`Actual ${prevFY}`,dataPrev[section].reject_inhouse??[],'#b0b0b0');
     } else if (kpi==='safety') {
-        rows+=mkRow('Minor',      data[section].minor??[],      '#854F0B');
-        rows+=mkRow('Significant',data[section].significant??[],'#D0021B',true);
-        rows+=mkRow('Fatality',   data[section].fatality??[],   '#501313');
+        rows+=mkRow('Minor',       data[section].minor??[],      '#854F0B');
+        rows+=mkRow('Significant', data[section].significant??[],'#D0021B', true);
+        rows+=mkRow('Fatality',    data[section].fatality??[],   '#501313');
     }
+
     tbody.innerHTML=rows||'<tr><td colspan="13" style="text-align:center;color:#9ca3af;padding:4px">No data</td></tr>';
 }
 
@@ -931,15 +1008,21 @@ async function loadKpi() {
         const r=await fetch(url); const json=await r.json();
         const {labels,data}=json;
 
-        ['MS1','MS2','Conrod','HDE'].forEach(sec=>{
+        const sections = activeKpi === 'fcost' ? ['Conrod','HDE'] : ['MS1','MS2','Conrod','HDE'];
+
+        sections.forEach(sec=>{
             const sid=sec.toLowerCase();
             if (!data[sec]) return;
 
             let lastVal=null,lastTarget=null,prevVal=null;
-            if (activeKpi==='operation_ratio'||activeKpi==='fcost') {
+            if (activeKpi==='operation_ratio') {
                 lastVal=getLastNonNull(data[sec].actual);
                 lastTarget=getLastNonNull(data[sec].target);
                 prevVal=getPrevNonNull(data[sec].actual);
+            } else if (activeKpi==='fcost') {
+                lastVal=getLastNonNull(data[sec].pct);
+                lastTarget=data[sec].pct_target ?? 0.15;
+                prevVal=getPrevNonNull(data[sec].pct);
             } else if (activeKpi==='safety') {
                 const m=getLastNonNull(data[sec].minor),s=getLastNonNull(data[sec].significant),f=getLastNonNull(data[sec].fatality);
                 lastVal=(m===null&&s===null&&f===null)?null:(m??0)+(s??0)+(f??0); lastTarget=0;
@@ -948,6 +1031,7 @@ async function loadKpi() {
                 lastTarget=getLastNonNull(data[sec].reject_target);
                 prevVal=getPrevNonNull(data[sec].reject_inhouse);
             }
+
             setMetricCard(sid,fmtKpi(lastVal,activeKpi),getSubLabel(lastVal,lastTarget,activeKpi),getTrendLabel(lastVal,prevVal,activeKpi));
             setSectionBadge(sid,lastVal,lastTarget,activeKpi);
             setMetricEmoji(sid,lastVal,lastTarget,activeKpi);

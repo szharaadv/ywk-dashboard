@@ -5,7 +5,8 @@ requireAdminLogin();
 require_once __DIR__ . '/../../config/db.php';
 $db = getDB();
 
-$sections = ['MS1', 'MS2', 'Conrod', 'HDE'];
+$sections = ['Conrod', 'HDE'];
+$target_pct = ['Conrod' => 0.50, 'HDE' => 0.15];
 $months   = ['Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec','Jan','Feb','Mar'];
 $fy_list  = ['fy2025' => 2025, 'fy2026' => 2026, 'fy2027' => 2027];
 
@@ -21,36 +22,43 @@ function fyToPeriodes(string $fy): array {
     return $periodes;
 }
 
-$alert = '';
+$alert      = '';
 $alert_type = '';
 
 // ===== HANDLE SAVE =====
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save'])) {
     $fy      = $_POST['fy']      ?? 'fy2026';
-    $section = $_POST['section'] ?? 'MS1';
+    $section = $_POST['section'] ?? 'Conrod';
     $periodes = fyToPeriodes($fy);
 
     $saved = 0;
     $stmt = $db->prepare("
-        INSERT INTO kpi_fcost (periode, section, actual, target)
-        VALUES (?, ?, ?, ?)
-        ON DUPLICATE KEY UPDATE actual = VALUES(actual), target = VALUES(target)
+        INSERT INTO kpi_fcost (periode, section, actual, target, sales)
+        VALUES (?, ?, ?, ?, ?)
+        ON DUPLICATE KEY UPDATE
+            actual = VALUES(actual),
+            target = VALUES(target),
+            sales  = VALUES(sales)
     ");
 
     foreach ($periodes as $i => $periode) {
-        $actual = $_POST['actual'][$i] ?? '';
-        $target = $_POST['target'][$i] ?? '';
+    $actual = $_POST['actual'][$i] ?? '';
+    $sales  = $_POST['sales'][$i]  ?? '';
 
-        if ($actual === '' && $target === '') continue;
+    if ($actual === '' && $sales === '') continue;
 
-        $stmt->execute([
-            $periode,
-            $section,
-            $actual !== '' ? (float)$actual : null,
-            $target !== '' ? (float)$target : null,
-        ]);
-        $saved++;
-    }
+    $tgt_pct = $target_pct[$section] / 100;
+    $target  = ($sales !== '') ? round((float)$sales * $tgt_pct) : null;
+
+    $stmt->execute([
+        $periode,
+        $section,
+        $actual !== '' ? (float)$actual : null,
+        $target,
+        $sales  !== '' ? (float)$sales  : null,
+    ]);
+    $saved++;
+}
 
     $alert      = "✓ $saved data berhasil disimpan untuk $section - " . strtoupper($fy);
     $alert_type = 'success';
@@ -68,12 +76,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_periode'])) {
 
 // ===== LOAD EXISTING DATA =====
 $view_fy      = $_GET['fy']      ?? 'fy2026';
-$view_section = $_GET['section'] ?? 'MS1';
+$view_section = $_GET['section'] ?? 'Conrod';
 $periodes_view = fyToPeriodes($view_fy);
 
 $existing = [];
 $stmt2 = $db->prepare("
-    SELECT DATE_FORMAT(periode,'%Y-%m-%d') AS p, actual, target
+    SELECT DATE_FORMAT(periode,'%Y-%m-%d') AS p, actual, target, sales
     FROM kpi_fcost
     WHERE section = ? AND periode IN (" . implode(',', array_fill(0, 12, '?')) . ")
     ORDER BY periode ASC
@@ -87,7 +95,7 @@ $filled = 0;
 foreach ($periodes_view as $p) {
     if (isset($existing[$p]) && $existing[$p]['actual'] !== null) $filled++;
 }
-$pct = round($filled / 12 * 100);
+$pct_filled = round($filled / 12 * 100);
 ?>
 <!DOCTYPE html>
 <html lang="id">
@@ -108,7 +116,7 @@ $pct = round($filled / 12 * 100);
         .back-btn:hover { color:#fff; }
         .topbar-title { font-size:15px; font-weight:700; color:#fff; }
 
-        .content { padding:1.25rem; display:flex; flex-direction:column; gap:1rem; max-width:1200px; }
+        .content { padding:1.25rem; display:flex; flex-direction:column; gap:1rem; max-width:1400px; }
 
         .card { background:#fff; border:1px solid #e5e7eb; border-radius:12px; padding:1.25rem; }
         .card-title {
@@ -140,12 +148,12 @@ $pct = round($filled / 12 * 100);
             font-size:10px; font-weight:700; color:#6b7280;
             text-transform:uppercase; letter-spacing:0.04em;
         }
-        .input-table th:first-child { text-align:left; }
+        .input-table th:first-child { text-align:left; min-width:100px; }
         .input-table td { padding:6px 8px; border-bottom:1px solid #f0f0f0; text-align:center; }
         .input-table td:first-child { text-align:left; font-weight:600; color:#374151; }
 
         .num-input {
-            width:72px; padding:5px 6px; font-size:12px; text-align:center;
+            width:75px; padding:4px 4px; font-size:10px; text-align:center;
             border:1px solid #e5e7eb; border-radius:6px; outline:none;
             transition:border-color 0.15s;
         }
@@ -193,6 +201,10 @@ $pct = round($filled / 12 * 100);
             padding:6px 10px; background:#fffbeb; border-left:3px solid #f59e0b;
             border-radius:0 6px 6px 0;
         }
+
+        .row-sales { background:#f9fafb; }
+        .row-actual { background:#fff; }
+        .row-target { background:#fef9f0; }
     </style>
 </head>
 <body>
@@ -236,13 +248,17 @@ $pct = round($filled / 12 * 100);
             <?php endforeach; ?>
         </div>
 
-        <div class="unit-note">💡 Masukkan nilai F-Cost dalam satuan yang konsisten (contoh: Juta Yen atau %). Sesuaikan label target di bawah jika perlu.</div>
+        <div class="unit-note">
+            💡 Masukkan <strong>Cost Reject</strong> dan <strong>Sales Amount</strong> dalam Rupiah.
+            Target <strong><?= $target_pct[$view_section] ?>%</strong> dihitung otomatis dari Sales Amount.
+        </div>
 
         <form method="POST">
             <input type="hidden" name="save" value="1">
             <input type="hidden" name="fy" value="<?= $view_fy ?>">
             <input type="hidden" name="section" value="<?= $view_section ?>">
 
+            <div style="overflow-x:auto;">
             <table class="input-table">
                 <thead>
                     <tr>
@@ -251,37 +267,40 @@ $pct = round($filled / 12 * 100);
                     </tr>
                 </thead>
                 <tbody>
-                    <tr>
-                        <td>Target F-Cost</td>
-                        <?php foreach ($periodes_view as $i => $p): ?>
-                        <td>
-                            <input type="number" name="target[]"
-                                   class="num-input <?= isset($existing[$p]) && $existing[$p]['target'] !== null ? 'has-value' : '' ?>"
-                                   value="<?= isset($existing[$p]) ? $existing[$p]['target'] : '' ?>"
-                                   min="0" step="0.01" placeholder="—">
-                        </td>
-                        <?php endforeach; ?>
-                    </tr>
-                    <tr>
-                        <td>Actual F-Cost</td>
+                    <!-- Actual / Cost Reject (nominal Rp) -->
+                    <tr class="row-actual">
+                        <td>Cost Reject (Rp)</td>
                         <?php foreach ($periodes_view as $i => $p): ?>
                         <td>
                             <input type="number" name="actual[]"
                                    class="num-input <?= isset($existing[$p]) && $existing[$p]['actual'] !== null ? 'has-value' : '' ?>"
-                                   value="<?= isset($existing[$p]) ? $existing[$p]['actual'] : '' ?>"
-                                   min="0" step="0.01" placeholder="—">
+                                   value="<?= isset($existing[$p]) ? ($existing[$p]['actual'] ?? '') : '' ?>"
+                                   min="0" step="1" placeholder="—">
+                        </td>
+                        <?php endforeach; ?>
+                    </tr>
+                    <!-- Sales Amount (nominal Rp) -->
+                    <tr class="row-sales">
+                        <td>Sales Amount (Rp)</td>
+                        <?php foreach ($periodes_view as $i => $p): ?>
+                        <td>
+                            <input type="number" name="sales[]"
+                                   class="num-input <?= isset($existing[$p]) && ($existing[$p]['sales'] ?? null) !== null ? 'has-value' : '' ?>"
+                                   value="<?= isset($existing[$p]) ? ($existing[$p]['sales'] ?? '') : '' ?>"
+                                   min="0" step="1" placeholder="—">
                         </td>
                         <?php endforeach; ?>
                     </tr>
                 </tbody>
             </table>
+            </div>
 
             <div style="margin-top:12px;">
                 <div class="progress-label">
-                    Progress pengisian: <?= $filled ?>/12 bulan (<?= $pct ?>%)
+                    Progress pengisian: <?= $filled ?>/12 bulan (<?= $pct_filled ?>%)
                 </div>
                 <div class="progress-bar-wrap">
-                    <div class="progress-bar-fill" style="width:<?= $pct ?>%;"></div>
+                    <div class="progress-bar-fill" style="width:<?= $pct_filled ?>%;"></div>
                 </div>
             </div>
 
@@ -310,31 +329,44 @@ $pct = round($filled / 12 * 100);
                 <tr>
                     <th>Periode</th>
                     <th>Section</th>
-                    <th>Actual</th>
-                    <th>Target</th>
+                    <th>Cost Reject</th>
+                    <th>Sales Amount</th>
+                    <th>Actual %</th>
+                    <th>Target %</th>
                     <th>Status</th>
                     <th></th>
                 </tr>
             </thead>
             <tbody>
                 <?php foreach ($existing as $p => $row):
-                    // F-Cost: ON target = actual <= target (biaya lebih rendah = lebih baik)
-                    $isOk = $row['actual'] !== null && $row['target'] !== null
-                          && $row['actual'] <= $row['target'];
+                    $pct_actual = ($row['sales'] ?? null) && $row['actual'] !== null
+                                ? round($row['actual'] / $row['sales'] * 100, 2)
+                                : null;
+                    $isOk = $pct_actual !== null && $pct_actual <= $target_pct[$view_section];
                 ?>
                 <tr>
                     <td><?= date('M Y', strtotime($p)) ?></td>
                     <td><?= $view_section ?></td>
-                    <td style="font-weight:700;"><?= $row['actual'] !== null ? number_format($row['actual'],2) : '—' ?></td>
-                    <td><?= $row['target'] !== null ? number_format($row['target'],2) : '—' ?></td>
+                    <td style="font-weight:700;">
+                        <?= $row['actual'] !== null ? 'Rp '.number_format($row['actual'],0,',','.') : '—' ?>
+                    </td>
                     <td>
-                        <?php if ($row['actual'] !== null && $row['target'] !== null): ?>
+                        <?= ($row['sales'] ?? null) !== null ? 'Rp '.number_format($row['sales'],0,',','.') : '—' ?>
+                    </td>
+                    <td style="font-weight:700;">
+                        <?= $pct_actual !== null ? $pct_actual.'%' : '—' ?>
+                    </td>
+                    <td><?= $target_pct[$view_section] ?>%</td>
+                    <td>
+                        <?php if ($pct_actual !== null): ?>
                         <span style="font-size:10px; font-weight:700; padding:2px 8px; border-radius:20px;
                                      background:<?= $isOk ? '#EAF3DE' : '#FDECEA' ?>;
                                      color:<?= $isOk ? '#3B6D11' : '#D0021B' ?>;">
                             <?= $isOk ? '✓ On Target' : '⚠ Off Target' ?>
                         </span>
-                        <?php else: ?><span style="font-size:10px;color:#9ca3af;">—</span><?php endif; ?>
+                        <?php else: ?>
+                        <span style="font-size:10px;color:#9ca3af;">—</span>
+                        <?php endif; ?>
                     </td>
                     <td>
                         <form method="POST" style="display:inline"

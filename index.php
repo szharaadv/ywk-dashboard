@@ -601,8 +601,9 @@ function renderProductivityChart(lineMap, sec) {
         });
     });
 
+    const LINE_COUNT = { MS1:5, MS2:7, Conrod:6, HDE:1 };
     document.getElementById('ytd-home-subtitle').textContent =
-        `Productivity & Pass Rate · ${sec} · ${lineNames.length} line`;
+        `Productivity & Pass Rate · ${sec} · ${LINE_COUNT[sec] ?? lineNames.length} line`;
 
     const canvas = document.getElementById('chartKPI');
 

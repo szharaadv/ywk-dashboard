@@ -41,10 +41,12 @@ $current = max(1, min($total_slides, (int)($_GET['slide'] ?? 1)));
                     flex-wrap:wrap; gap:8px; flex-shrink:0;">
             <div style="display:flex; align-items:center; gap:10px;">
                 <span style="font-size:13px; font-weight:700; color:#1a3a5c;">
-                    PPM February 2026
+                    PPM Performance Slides
                 </span>
                 <span style="width:1px; height:14px; background:#e5e7eb; display:inline-block;"></span>
-                <span style="font-size:11px; color:#6b7280;">Manufacturing-QC-YWK</span>
+                <span style="font-size:11px; color:#6b7280;">
+                    <?= date('F Y') ?> · Manufacturing QC YWK
+                </span>
             </div>
             <div style="display:flex; align-items:center; gap:10px;">
                 <span style="font-size:11px; color:#9ca3af;"><?= $total_slides ?> slides</span>
@@ -71,7 +73,7 @@ $current = max(1, min($total_slides, (int)($_GET['slide'] ?? 1)));
                             align-items:center; justify-content:center;
                             position:relative; min-height:0; overflow:hidden;">
                     <img id="mainSlide"
-                         src="../assets/ppm-slides/slide-<?= str_pad($current, 2, '0', STR_PAD_LEFT) ?>.jpg"
+                         src="/ywk-dashboard/assets/ppm-slides/slide-<?= str_pad($current, 2, '0', STR_PAD_LEFT) ?>.jpg"
                          alt="PPM Slide <?= $current ?>"
                          style="max-width:100%; max-height:100%;
                                 object-fit:contain; display:block;">
@@ -157,7 +159,7 @@ $current = max(1, min($total_slides, (int)($_GET['slide'] ?? 1)));
                      style="cursor:pointer; border-radius:6px; overflow:hidden;
                             border:2px solid <?= $isActive ? '#D0021B' : '#e5e7eb' ?>;
                             flex-shrink:0; position:relative; transition:border-color 0.15s;">
-                    <img src="../assets/ppm-slides/slide-<?= $pad ?>.jpg"
+                    <img src="/ywk-dashboard/assets/ppm-slides/slide-<?= $pad ?>.jpg"
                          alt="Slide <?= $i ?>"
                          style="width:100%; height:90px; object-fit:cover; display:block;">
                     <div style="position:absolute; bottom:0; left:0; right:0;
@@ -186,7 +188,7 @@ function goTo(n) {
     const pad = String(n).padStart(2, '0');
 
     document.getElementById('mainSlide').src =
-        `../assets/ppm-slides/slide-${pad}.jpg`;
+    `/ywk-dashboard/assets/ppm-slides/slide-${pad}.jpg`;
     document.getElementById('progressBar').style.width =
         `${(n / TOTAL * 100).toFixed(2)}%`;
     document.getElementById('slideInput').value = n;

@@ -32,14 +32,14 @@ $prev_fy_info = $prev_fy_key ? ($fy_map[$prev_fy_key] ?? null) : null;
 $cur_fy_label  = $cur_fy_info['label'];
 $prev_fy_label = $prev_fy_info ? $prev_fy_info['label'] : 'FY2025';
 
-$sections = ['MS1', 'MS2', 'Conrod', 'HDE'];
+$sections = ['Conrod', 'HDE'];
 
 // ===== Query current FY =====
 $stmt = $db->prepare("
-    SELECT DATE_FORMAT(periode, '%b %Y') AS label, section, actual, target
-    FROM kpi_fcost
-    WHERE periode BETWEEN ? AND ?
-    ORDER BY periode ASC, section ASC
+    SELECT DATE_FORMAT(periode, '%b %Y') AS label, section, actual, target, sales
+FROM kpi_fcost
+WHERE periode BETWEEN ? AND ?
+ORDER BY periode ASC, section ASC
 ");
 $stmt->execute([$cur_fy_info['start'], $cur_fy_info['end']]);
 $rows = $stmt->fetchAll();
@@ -48,7 +48,7 @@ $rows = $stmt->fetchAll();
 $rows_prev = [];
 if ($prev_fy_info) {
     $stmt2 = $db->prepare("
-        SELECT DATE_FORMAT(periode, '%b %Y') AS label, section, actual, target
+        SELECT DATE_FORMAT(periode, '%b %Y') AS label, section, actual, target, sales
         FROM kpi_fcost
         WHERE periode BETWEEN ? AND ?
         ORDER BY periode ASC, section ASC
@@ -72,19 +72,29 @@ for ($m = 1; $m <= 3;  $m++) $labels_prev[] = date('M Y', mktime(0,0,0,$m,1,$pre
 function buildFcostSection(array $rows, array $labels, array $sections): array {
     $data = [];
     foreach ($sections as $section) {
-        $actual = []; $target = [];
+        $actual = []; $target = []; $sales = []; $pct = [];
         foreach ($labels as $label) {
             $found = false;
             foreach ($rows as $row) {
                 if ($row['label'] === $label && $row['section'] === $section) {
-                    $actual[] = $row['actual'] !== null ? (float)$row['actual'] : null;
-                    $target[] = $row['target'] !== null ? (float)$row['target'] : null;
+                    $act  = $row['actual'] !== null ? (float)$row['actual'] : null;
+                    $tgt  = $row['target'] !== null ? (float)$row['target'] : null;
+                    $sal  = $row['sales']  !== null ? (float)$row['sales']  : null;
+                    $p    = ($sal && $sal > 0) ? round($act / $sal * 100, 4) : null;
+                    $actual[] = $act; $target[] = $tgt;
+                    $sales[]  = $sal; $pct[]    = $p;
                     $found = true; break;
                 }
             }
-            if (!$found) { $actual[] = null; $target[] = null; }
+            if (!$found) { $actual[] = null; $target[] = null; $sales[] = null; $pct[] = null; }
         }
-        $data[$section] = ['actual' => $actual, 'target' => $target];
+        $data[$section] = [
+            'actual' => $actual,
+            'target' => $target,
+            'sales'  => $sales,
+            'pct'    => $pct,        // persentase Cost Reject/Sales
+            'pct_target' => 0.15,   // target tetap 0.15%
+        ];
     }
     return $data;
 }

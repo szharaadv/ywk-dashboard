@@ -73,7 +73,7 @@ $current = max(1, min($total_slides, (int)($_GET['slide'] ?? 1)));
                             align-items:center; justify-content:center;
                             position:relative; min-height:0; overflow:hidden;">
                     <img id="mainSlide"
-                         src="/ywk-dashboard/assets/ppm-slides/slide-<?= str_pad($current, 2, '0', STR_PAD_LEFT) ?>.jpg"
+                         src="/assets/ppm-slides/slide-<?= str_pad($current, 2, '0', STR_PAD_LEFT) ?>.jpg"
                          alt="PPM Slide <?= $current ?>"
                          style="max-width:100%; max-height:100%;
                                 object-fit:contain; display:block;">
@@ -159,7 +159,7 @@ $current = max(1, min($total_slides, (int)($_GET['slide'] ?? 1)));
                      style="cursor:pointer; border-radius:6px; overflow:hidden;
                             border:2px solid <?= $isActive ? '#D0021B' : '#e5e7eb' ?>;
                             flex-shrink:0; position:relative; transition:border-color 0.15s;">
-                    <img src="/ywk-dashboard/assets/ppm-slides/slide-<?= $pad ?>.jpg"
+                    <img src="/assets/ppm-slides/slide-<?= $pad ?>.jpg"
                          alt="Slide <?= $i ?>"
                          style="width:100%; height:90px; object-fit:cover; display:block;">
                     <div style="position:absolute; bottom:0; left:0; right:0;
@@ -188,7 +188,7 @@ function goTo(n) {
     const pad = String(n).padStart(2, '0');
 
     document.getElementById('mainSlide').src =
-    `/ywk-dashboard/assets/ppm-slides/slide-${pad}.jpg`;
+    `/assets/ppm-slides/slide-${pad}.jpg`;
     document.getElementById('progressBar').style.width =
         `${(n / TOTAL * 100).toFixed(2)}%`;
     document.getElementById('slideInput').value = n;

@@ -900,7 +900,7 @@ function buildKpiDatasets(json,section,kpi) {
         return ds;
     }
     if (kpi==='quality') {
-        const noTarget = data[section].no_target ?? false;
+        const noTarget = false; 
         const ds=[];
         ds.push({label:`Actual ${curFY}`,data:data[section].reject_inhouse??[],borderColor:color,backgroundColor:color+'18',borderWidth:2.5,pointRadius:4,pointHoverRadius:6,tension:.3,fill:true,spanGaps:false});
         if (!noTarget)

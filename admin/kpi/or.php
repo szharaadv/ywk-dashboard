@@ -26,11 +26,25 @@ function fyToPeriodes(string $fy): array {
 $alert = '';
 $alert_type = '';
 
+// ===== DEBUG LOG =====
+error_log("\n=== DEBUG OR.PHP START ===");
+error_log("REQUEST_METHOD: " . $_SERVER['REQUEST_METHOD']);
+error_log("POST keys: " . implode(', ', array_keys($_POST ?? [])));
+
 // ===== HANDLE SAVE =====
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save'])) {
+    error_log("SAVE triggered");
+    
     $fy      = $_POST['fy']      ?? 'fy2026';
     $section = $_POST['section'] ?? 'MS1';
+    
+    error_log("FY: $fy");
+    error_log("Section: $section");
+    error_log("Actual array: " . json_encode($_POST['actual'] ?? []));
+    error_log("Target array: " . json_encode($_POST['target'] ?? []));
+    
     $periodes = fyToPeriodes($fy);
+    error_log("Periodes: " . json_encode($periodes));
 
     $saved = 0;
     $stmt = $db->prepare("
@@ -43,18 +57,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save'])) {
         $actual = $_POST['actual'][$i] ?? '';
         $target = $_POST['target'][$i] ?? '';
 
-        // Skip kalau keduanya kosong
-        if ($actual === '' && $target === '') continue;
+        // DEBUG each iteration
+        error_log("Index $i - Periode: $periode, Actual: '$actual', Target: '$target'");
 
-        $stmt->execute([
-            $periode,
-            $section,
-            $actual !== '' ? (float)$actual : null,
-            $target !== '' ? (float)$target : null,
-        ]);
-        $saved++;
+        // Skip kalau keduanya kosong
+        if ($actual === '' && $target === '') {
+            error_log("  → Skipped (both empty)");
+            continue;
+        }
+
+        try {
+            $actualVal = $actual !== '' ? (float)$actual : null;
+            $targetVal = $target !== '' ? (float)$target : null;
+            
+            error_log("  → Executing with: periode=$periode, section=$section, actual=$actualVal, target=$targetVal");
+            
+            $stmt->execute([
+                $periode,
+                $section,
+                $actualVal,
+                $targetVal,
+            ]);
+            $saved++;
+            error_log("  ✓ Success");
+        } catch (Exception $e) {
+            error_log("  ✗ Error: " . $e->getMessage());
+        }
     }
 
+    error_log("Total saved: $saved");
     $alert      = "✓ $saved data berhasil disimpan untuk $section - " . strtoupper($fy);
     $alert_type = 'success';
 }
@@ -63,6 +94,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save'])) {
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_periode'])) {
     $periode = $_POST['delete_periode'];
     $section = $_POST['delete_section'];
+    error_log("DELETE: periode=$periode, section=$section");
     $db->prepare("DELETE FROM kpi_operation_ratio WHERE periode = ? AND section = ?")
        ->execute([$periode, $section]);
     $alert      = '✓ Data berhasil dihapus.';
@@ -85,6 +117,9 @@ $stmt2->execute(array_merge([$view_section], $periodes_view));
 foreach ($stmt2->fetchAll() as $row) {
     $existing[$row['p']] = $row;
 }
+
+error_log("Loaded existing data: " . count($existing) . " rows");
+error_log("=== DEBUG OR.PHP END ===\n");
 ?>
 <!DOCTYPE html>
 <html lang="id">

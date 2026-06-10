@@ -93,7 +93,7 @@ function buildFcostSection(array $rows, array $labels, array $sections): array {
             'target' => $target,
             'sales'  => $sales,
             'pct'    => $pct,        // persentase Cost Reject/Sales
-            'pct_target' => 0.15,   // target tetap 0.15%
+            'pct_target' => ($section === 'Conrod') ? 0.50 : 0.15,
         ];
     }
     return $data;

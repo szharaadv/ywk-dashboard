@@ -385,16 +385,37 @@ fetch('api/overview_summary.php' + QS)
                     ${ql.actual<=ql.target?'✓ On target':'⚠ Over target'}
                  </span> &nbsp;·&nbsp; <span style="font-size:9px;">${ql.periode ?? ''}</span>`;
         }
-        if (fc && fc.actual !== null) {
-            const fcJt = Math.round(fc.actual/1000000);
-            const tgJt = Math.round(fc.target/1000000);
-            document.getElementById('kpi-fc-actual').innerHTML =
-                'Rp ' + fcJt + '<span>jt</span>';
-            document.getElementById('kpi-fc-sub').innerHTML =
-                `<span class="${fc.actual<=fc.target?'ok':'bad'}">
-                    ${fc.actual<=fc.target?'✓ Under target':'⚠ Over target'}
-                 </span> &nbsp;·&nbsp; <span style="font-size:9px;">Target Rp${tgJt}jt</span>`;
-        }
+        if (fc && (fc.conrod || fc.hde)) {
+        const cr = fc.conrod, hde = fc.hde;
+        const crLine = cr?.pct !== null
+            ? `<div style="display:flex;justify-content:space-between;align-items:center;">
+                <span style="font-size:10px;color:rgba(255,255,255,0.7);">Conrod</span>
+                <span style="font-size:13px;font-weight:700;">
+                    ${cr.pct}%
+                    <span style="font-size:10px;font-weight:400;margin-left:4px;" class="${cr.status==='ok'?'ok':'bad'}">
+                        ${cr.status==='ok'?'✓':'⚠'} target ${cr.target_pct}%
+                    </span>
+                </span>
+            </div>`
+            : '';
+        const hdeLine = hde?.pct !== null
+            ? `<div style="display:flex;justify-content:space-between;align-items:center;margin-top:2px;">
+                <span style="font-size:10px;color:rgba(255,255,255,0.7);">HDE</span>
+                <span style="font-size:13px;font-weight:700;">
+                    ${hde.pct}%
+                    <span style="font-size:10px;font-weight:400;margin-left:4px;" class="${hde.status==='ok'?'ok':'bad'}">
+                        ${hde.status==='ok'?'✓':'⚠'} target ${hde.target_pct}%
+                    </span>
+                </span>
+            </div>`
+            : '';
+
+        document.getElementById('kpi-fc-actual').innerHTML =
+            `<div style="font-size:11px;font-weight:700;margin-bottom:4px;">F-Cost %</div>
+            ${crLine}${hdeLine}`;
+        document.getElementById('kpi-fc-sub').innerHTML =
+            `<span style="font-size:10px;color:rgba(255,255,255,0.6);">${cr?.periode ?? hde?.periode ?? ''}</span>`;
+    }
 
         const gaps = [];
         if (or?.actual !== null && (or.actual - or.target) < 0)
@@ -403,8 +424,9 @@ fetch('api/overview_summary.php' + QS)
             gaps.push({ label:'Safety', val:sf.total+' accident' });
         if (ql?.actual !== null && ql.actual > ql.target)
             gaps.push({ label:'Quality', val:'+'+Math.round(ql.actual-ql.target).toLocaleString('id-ID')+' Part Per Million' });
-        if (fc?.actual !== null && fc.actual > fc.target)
-            gaps.push({ label:'F-Cost', val:'+Rp'+Math.round((fc.actual-fc.target)/1000000).toFixed(0)+'jt' });
+                    gaps.push({ label:'F-Cost Conrod', val: fc.conrod.pct+'% > '+fc.conrod.target_pct+'%' });
+        if (fc?.hde?.status === 'over')
+            gaps.push({ label:'F-Cost HDE', val: fc.hde.pct+'% > '+fc.hde.target_pct+'%' });
 
         document.getElementById('top-gaps').innerHTML = gaps.length === 0
             ? `<span style="font-size:11px;font-weight:700;color:#22c55e;">✓ All KPI On Target</span>`
@@ -996,15 +1018,28 @@ function refreshAllData() {
                         ${ql.actual<=ql.target?'✓ On target':'⚠ Over target'}
                      </span> &nbsp;·&nbsp; ${ql.periode}`;
             }
-            if (fc && fc.actual !== null) {
-                const fcJt = Math.round(fc.actual/1000000);
-                const tgJt = Math.round(fc.target/1000000);
+            if (fc && (fc.conrod || fc.hde)) {
+                const cr = fc.conrod, hde = fc.hde;
+                const crLine = cr?.pct !== null
+                    ? `<div style="display:flex;justify-content:space-between;align-items:center;">
+                        <span style="font-size:10px;color:rgba(255,255,255,0.7);">Conrod</span>
+                        <span style="font-size:13px;font-weight:700;">${cr.pct}%
+                            <span style="font-size:10px;font-weight:400;margin-left:4px;" class="${cr.status==='ok'?'ok':'bad'}">
+                                ${cr.status==='ok'?'✓':'⚠'} target ${cr.target_pct}%
+                            </span>
+                        </span></div>` : '';
+                const hdeLine = hde?.pct !== null
+                    ? `<div style="display:flex;justify-content:space-between;align-items:center;margin-top:2px;">
+                        <span style="font-size:10px;color:rgba(255,255,255,0.7);">HDE</span>
+                        <span style="font-size:13px;font-weight:700;">${hde.pct}%
+                            <span style="font-size:10px;font-weight:400;margin-left:4px;" class="${hde.status==='ok'?'ok':'bad'}">
+                                ${hde.status==='ok'?'✓':'⚠'} target ${hde.target_pct}%
+                            </span>
+                        </span></div>` : '';
                 document.getElementById('kpi-fc-actual').innerHTML =
-                    'Rp ' + fcJt + '<span>jt</span>';
+                    `<div style="font-size:11px;font-weight:700;margin-bottom:4px;">F-Cost %</div>${crLine}${hdeLine}`;
                 document.getElementById('kpi-fc-sub').innerHTML =
-                    `<span class="${fc.actual<=fc.target?'ok':'bad'}">
-                        ${fc.actual<=fc.target?'✓ Under target':'⚠ Over target'}
-                     </span> &nbsp;·&nbsp; Target Rp${tgJt}jt`;
+                    `<span style="font-size:10px;color:rgba(255,255,255,0.6);">${cr?.periode ?? hde?.periode ?? ''}</span>`;
             }
 
             // Refresh top gaps
@@ -1106,6 +1141,7 @@ async function loadKaizenAnalytics() {
 
         const r = await fetch(`${KAIZEN_API}?bulan=${bulan}&tahun=${tahun}`);
         const d = await r.json();
+        if (!d || !d.dept || !d.radar) return; // tambahkan ini
 
         const monthNames = ['','Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
         const periodEl = document.getElementById('kaizen-analytics-period');
@@ -1120,6 +1156,7 @@ async function loadKaizenAnalytics() {
 }
 
 function renderAwarenessChart(dept) {
+    if (!dept || !dept.labels) return;  // tambahkan ini
     const ctx = document.getElementById('chartAwareness');
     if (!ctx) return;
     if (awarenessChart) { awarenessChart.destroy(); awarenessChart = null; }

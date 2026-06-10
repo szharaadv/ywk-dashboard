@@ -113,34 +113,53 @@ if ($lp_ql) {
     ];
 }
 
-// ── F-COST (YTD total) ────────────────────────────────────────────────────
-$lp_fc = getLastPeriode($db, 'kpi_fcost', $where, $params, 'actual');
-$fc    = ['actual' => null, 'target' => null, 'periode' => null, 'bulan' => 0];
-if ($lp_fc) {
-    $w2 = $where . " AND periode <= :lp_fc";
-    $p2 = array_merge($params, [':lp_fc' => $lp_fc]);
-    $stmt = $db->prepare("
-        SELECT
-            ROUND(SUM(actual) / COUNT(DISTINCT periode), 0) AS actual,
-            ROUND(AVG(target), 0) AS target,
-            COUNT(DISTINCT periode) AS bulan,
-            MIN(periode) AS first_p
+// ── F-COST per section (Conrod & HDE) sebagai ratio % ─────────────────────
+function getFcostSection($db, $section, $fyRange) {
+    $w = "WHERE section = :section";
+    $p = [':section' => $section];
+    if ($fyRange) {
+        $w .= " AND periode BETWEEN :fy_start AND :fy_end";
+        $p[':fy_start'] = $fyRange['start'];
+        $p[':fy_end']   = $fyRange['end'];
+    }
+    // Cari periode terakhir yang ada actual
+    $stmt = $db->prepare("SELECT MAX(periode) AS lp FROM kpi_fcost $w AND actual IS NOT NULL AND actual != 0");
+    $stmt->execute($p);
+    $lp = $stmt->fetch()['lp'] ?? null;
+    if (!$lp) return ['pct' => null, 'target_pct' => null, 'periode' => null, 'status' => null];
+
+    $w2 = $w . " AND periode <= :lp";
+    $p2 = array_merge($p, [':lp' => $lp]);
+    $stmt2 = $db->prepare("
+        SELECT SUM(actual) AS total_actual, SUM(sales) AS total_sales,
+               MIN(periode) AS first_p
         FROM kpi_fcost $w2
     ");
-    $stmt->execute($p2);
-    $row = $stmt->fetch();
-    $fc  = [
-        'actual'  => $row['actual'] !== null ? (int)$row['actual'] : null,
-        'target'  => $row['target'] !== null ? (int)$row['target'] : null,
-        'periode' => rangeLabel($row['first_p'], $lp_fc),
-        'bulan'   => (int)$row['bulan'],
+    $stmt2->execute($p2);
+    $row = $stmt2->fetch();
+
+    $pct        = ($row['total_sales'] > 0) ? round($row['total_actual'] / $row['total_sales'] * 100, 2) : null;
+    $target_pct = $section === 'Conrod' ? 0.50 : 0.15;
+    $status     = $pct !== null ? ($pct <= $target_pct ? 'ok' : 'over') : null;
+
+    return [
+        'pct'        => $pct,
+        'target_pct' => $target_pct,
+        'periode'    => rangeLabel($row['first_p'], $lp),
+        'status'     => $status,
     ];
 }
+
+$fc_conrod = getFcostSection($db, 'Conrod', $fyRange);
+$fc_hde    = getFcostSection($db, 'HDE',    $fyRange);
 
 echo json_encode([
     'operation_ratio' => $or,
     'safety'          => $sf,
     'quality'         => $ql,
-    'fcost'           => $fc,
+    'fcost'           => [
+        'conrod' => $fc_conrod,
+        'hde'    => $fc_hde,
+    ],
     'fy'              => $year,
 ]);

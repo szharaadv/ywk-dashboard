@@ -107,6 +107,7 @@ function buildQualitySection(array $rows, array $labels, array $sections): array
             'reject_target'  => $reject_target,
             'customer_claim' => $customer_claim,
             'claim_target'   => $claim_target,
+            'no_target'      => $section === 'HDE',
         ];
     }
     return $data;

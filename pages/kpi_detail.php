@@ -381,8 +381,8 @@ function getSubLabel(actual,target,kpi) {
         return actual===0?'<span style="color:#3B6D11">✓ No accident</span>'
                          :'<span style="color:#D0021B">⚠ Ada insiden</span>';
     if (kpi==='fcost'||kpi==='quality')
-        return actual<=target?'<span style="color:#3B6D11">▼ Di bawah batas</span>'
-                              :'<span style="color:#D0021B">▲ Melebihi batas</span>';
+        return actual<=target?'<span style="color:#3B6D11">Di bawah batas</span>'
+                            :'<span style="color:#D0021B">Melebihi batas</span>';
     const diff=parseFloat((actual-target).toFixed(1)),sign=diff>=0?'+':'';
     const color=diff>=0?'#3B6D11':'#D0021B';
     const u=kpi==='operation_ratio'?'%':'';
@@ -390,16 +390,18 @@ function getSubLabel(actual,target,kpi) {
 }
 function getTrendLabel(cur,prev,kpi) {
     if (cur===null||prev===null) return '';
-    const diff=cur-prev;
-    if (diff===0) return `<span style="color:#6b7280">→ Tidak berubah dari bulan lalu (${fmtKpi(prev,kpi)})</span>`;
-    const isGood=(kpi==='fcost'||kpi==='quality')?diff<0:diff>0;
-    const color=isGood?'#3B6D11':'#D0021B',arrow=diff>0?'▲':'▼';
-    let ds='',ps='';
-    if (kpi==='fcost'){ds=Math.abs(diff).toFixed(2)+'%';ps=prev.toFixed(2)+'%';}
-    else if(kpi==='quality'){ds=Math.abs(Math.round(diff)).toLocaleString('id-ID')+' PPM';ps=Math.round(prev).toLocaleString('id-ID')+' PPM';}
-    else if(kpi==='safety'){ds=Math.abs(Math.round(diff))+' case';ps=Math.round(prev)+' case';}
-    else{const ab=Math.abs(parseFloat(diff.toFixed(1)));ds=(isGood?'📈':'📉')+' '+ab+'%';ps=parseFloat(prev.toFixed(1))+'%';}
-    return `<span style="color:${color}">${arrow} ${ds} dari bulan lalu (${ps})</span>`;
+    const diff = cur - prev;
+    if (diff === 0) return `<span style="color:#6b7280">0 vs bulan lalu</span>`;
+    const isGood = (kpi==='fcost'||kpi==='quality') ? diff<0 : diff>0;
+    const color  = isGood ? '#3B6D11' : '#D0021B';
+    const sign   = diff > 0 ? '+' : '';
+    let diffStr  = '';
+    if (kpi==='fcost')           diffStr = sign + diff.toFixed(2) + '%';
+    else if (kpi==='operation_ratio') diffStr = sign + diff.toFixed(1) + '%';
+    else if (kpi==='quality')    diffStr = sign + Math.round(diff).toLocaleString('id-ID') + ' PPM';
+    else if (kpi==='safety')     diffStr = sign + Math.round(diff) + ' case';
+    else                         diffStr = sign + diff;
+    return `<span style="color:${color};font-weight:700;">${diffStr}</span>`;
 }
 function setSectionBadge(sid,actual,target,kpi) {
     const el=document.getElementById('badge-'+sid); if(!el) return;
@@ -898,14 +900,15 @@ function buildKpiDatasets(json,section,kpi) {
         return ds;
     }
     if (kpi==='quality') {
-        const ds=[
-            {label:`Actual ${curFY}`,data:data[section].reject_inhouse??[],borderColor:color,backgroundColor:color+'18',borderWidth:2.5,pointRadius:4,pointHoverRadius:6,tension:.3,fill:true,spanGaps:false},
-            {label:'Batas Maximum', data:data[section].reject_target??[], borderColor:'#e53935',borderWidth:1.5,borderDash:[5,4],pointRadius:0,tension:0,fill:false,spanGaps:true,backgroundColor:'transparent'},
-        ];
+        const noTarget = data[section].no_target ?? false;
+        const ds=[];
+        ds.push({label:`Actual ${curFY}`,data:data[section].reject_inhouse??[],borderColor:color,backgroundColor:color+'18',borderWidth:2.5,pointRadius:4,pointHoverRadius:6,tension:.3,fill:true,spanGaps:false});
+        if (!noTarget)
+            ds.push({label:'Batas Maximum',data:data[section].reject_target??[],borderColor:'#e53935',borderWidth:1.5,borderDash:[5,4],pointRadius:0,tension:0,fill:false,spanGaps:true,backgroundColor:'transparent'});
         if (compare&&dataPrev&&dataPrev[section])
             ds.push({label:`Actual ${prevFY}`,data:dataPrev[section].reject_inhouse??[],borderColor:'#b0b0b0',backgroundColor:'transparent',borderWidth:1.5,borderDash:[3,3],pointRadius:2,pointHoverRadius:4,tension:.3,fill:false,spanGaps:false});
         return ds;
-    }
+}
     return [];
 }
 
@@ -982,7 +985,9 @@ function fillKpiTable(json,section,kpi) {
         if (compare&&dataPrev&&dataPrev[section])
             rows+=mkRow(`Actual % ${prevFY}`, dataPrev[section].pct??[], '#d1d5db', false, 'fcost_pct');
     } else if (kpi==='quality') {
-        rows+=mkRow(`Target ${curFY}`, data[section].reject_target??[], '#e53935');
+    const noTarget = data[section].no_target ?? false;
+        if (!noTarget)
+            rows+=mkRow(`Target ${curFY}`, data[section].reject_target??[], '#e53935');
         rows+=mkRow(`Actual ${curFY}`, data[section].reject_inhouse??[], color, true);
         if (compare&&dataPrev&&dataPrev[section])
             rows+=mkRow(`Actual ${prevFY}`,dataPrev[section].reject_inhouse??[],'#b0b0b0');
@@ -1028,7 +1033,7 @@ async function loadKpi() {
                 lastVal=(m===null&&s===null&&f===null)?null:(m??0)+(s??0)+(f??0); lastTarget=0;
             } else if (activeKpi==='quality') {
                 lastVal=getLastNonNull(data[sec].reject_inhouse);
-                lastTarget=getLastNonNull(data[sec].reject_target);
+                lastTarget=data[sec].no_target ? null : getLastNonNull(data[sec].reject_target);
                 prevVal=getPrevNonNull(data[sec].reject_inhouse);
             }
 

@@ -980,7 +980,7 @@ const REFRESH_INTERVAL = 10 * 60 * 1000; // 10 menit
 
 function refreshAllData() {
     // Refresh KPI Summary + Top Gaps
-    fetch('api/overview_summary.php' + QS)
+    fetch('./api/overview_summary.php' + QS)
         .then(r => r.json())
         .then(d => {
             const or = d.operation_ratio, sf = d.safety,

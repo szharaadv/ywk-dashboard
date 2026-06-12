@@ -25,53 +25,118 @@ function fyToPeriodes(string $fy): array {
 $alert      = '';
 $alert_type = '';
 
+// ===== DEBUG LOG START =====
+error_log("\n" . str_repeat("=", 60));
+error_log("FCOST.PHP - " . date('Y-m-d H:i:s'));
+error_log("REQUEST: " . $_SERVER['REQUEST_METHOD']);
+error_log("POST keys: " . implode(', ', array_keys($_POST ?? [])));
+
 // ===== HANDLE SAVE =====
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save'])) {
+    error_log(">>> SAVE TRIGGERED");
+    
     $fy      = $_POST['fy']      ?? 'fy2026';
     $section = $_POST['section'] ?? 'Conrod';
     $periodes = fyToPeriodes($fy);
 
+    error_log("FY: $fy | Section: $section");
+
     $saved = 0;
-    $stmt = $db->prepare("
-        INSERT INTO kpi_fcost (periode, section, actual, target, sales)
-        VALUES (?, ?, ?, ?, ?)
-        ON DUPLICATE KEY UPDATE
-            actual = VALUES(actual),
-            target = VALUES(target),
-            sales  = VALUES(sales)
-    ");
+    $failed = 0;
+    $error_details = [];
+    
+    try {
+        $stmt = $db->prepare("
+            INSERT INTO kpi_fcost (periode, section, actual, target, sales)
+            VALUES (?, ?, ?, ?, ?)
+            ON DUPLICATE KEY UPDATE
+                actual = VALUES(actual),
+                target = VALUES(target),
+                sales  = VALUES(sales)
+        ");
+        error_log("Prepared statement OK");
+    } catch (Exception $e) {
+        error_log("❌ PREPARE ERROR: " . $e->getMessage());
+        $alert = "❌ Database error: " . $e->getMessage();
+        $alert_type = 'danger';
+        goto skip_save;
+    }
 
     foreach ($periodes as $i => $periode) {
-    $actual = $_POST['actual'][$i] ?? '';
-    $sales  = $_POST['sales'][$i]  ?? '';
+        $actual = $_POST['actual'][$i] ?? '';
+        $sales  = $_POST['sales'][$i]  ?? '';
 
-    if ($actual === '' && $sales === '') continue;
+        error_log("  Index $i - Periode: $periode | Actual: '$actual' | Sales: '$sales'");
 
-    $tgt_pct = $target_pct[$section] / 100;
-    $target  = ($sales !== '') ? round((float)$sales * $tgt_pct) : null;
+        if ($actual === '' && $sales === '') {
+            error_log("    → Skipped (both empty)");
+            continue;
+        }
 
-    $stmt->execute([
-        $periode,
-        $section,
-        $actual !== '' ? (float)$actual : null,
-        $target,
-        $sales  !== '' ? (float)$sales  : null,
-    ]);
-    $saved++;
+        try {
+            $actualVal = $actual !== '' ? (float)$actual : null;
+            $salesVal  = $sales  !== '' ? (float)$sales  : null;
+
+            $tgt_pct = $target_pct[$section] / 100;
+            $target  = ($salesVal !== null && $salesVal > 0) ? (int)round($salesVal * $tgt_pct) : null;
+
+            error_log("    → Values: actual=$actualVal, sales=$salesVal, target=$target");
+
+            $stmt->execute([
+                $periode,
+                $section,
+                $actualVal,
+                $target,
+                $salesVal,
+            ]);
+            
+            $saved++;
+            error_log("    ✓ Success (total: $saved)");
+            
+        } catch (PDOException $e) {
+            $failed++;
+            $error_msg = "Periode $periode: " . $e->getMessage();
+            error_log("    ✗ PDOException: $error_msg");
+            $error_details[] = $error_msg;
+        } catch (Exception $e) {
+            $failed++;
+            $error_msg = "Periode $periode: " . $e->getMessage();
+            error_log("    ✗ Exception: $error_msg");
+            $error_details[] = $error_msg;
+        }
+    }
+
+    if ($failed > 0) {
+        $alert = "⚠️ $saved data berhasil, $failed data gagal";
+        $alert_type = 'danger';
+    } else {
+        $alert = "✓ $saved data berhasil disimpan untuk $section - " . strtoupper($fy);
+        $alert_type = 'success';
+    }
+    
+    error_log("<<< SAVE END - Saved: $saved | Failed: $failed");
 }
 
-    $alert      = "✓ $saved data berhasil disimpan untuk $section - " . strtoupper($fy);
-    $alert_type = 'success';
-}
+skip_save:
+error_log("=== FCOST.PHP END ===\n");
 
 // ===== HANDLE DELETE =====
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_periode'])) {
+    error_log(">>> DELETE TRIGGERED");
     $periode = $_POST['delete_periode'];
     $section = $_POST['delete_section'];
-    $db->prepare("DELETE FROM kpi_fcost WHERE periode = ? AND section = ?")
-       ->execute([$periode, $section]);
-    $alert      = '✓ Data berhasil dihapus.';
-    $alert_type = 'success';
+    
+    try {
+        $db->prepare("DELETE FROM kpi_fcost WHERE periode = ? AND section = ?")
+           ->execute([$periode, $section]);
+        error_log("✓ Deleted periode=$periode, section=$section");
+        $alert      = '✓ Data berhasil dihapus.';
+        $alert_type = 'success';
+    } catch (Exception $e) {
+        error_log("❌ DELETE ERROR: " . $e->getMessage());
+        $alert = "❌ Delete error: " . $e->getMessage();
+        $alert_type = 'danger';
+    }
 }
 
 // ===== LOAD EXISTING DATA =====
@@ -80,15 +145,20 @@ $view_section = $_GET['section'] ?? 'Conrod';
 $periodes_view = fyToPeriodes($view_fy);
 
 $existing = [];
-$stmt2 = $db->prepare("
-    SELECT DATE_FORMAT(periode,'%Y-%m-%d') AS p, actual, target, sales
-    FROM kpi_fcost
-    WHERE section = ? AND periode IN (" . implode(',', array_fill(0, 12, '?')) . ")
-    ORDER BY periode ASC
-");
-$stmt2->execute(array_merge([$view_section], $periodes_view));
-foreach ($stmt2->fetchAll() as $row) {
-    $existing[$row['p']] = $row;
+try {
+    $stmt2 = $db->prepare("
+        SELECT DATE_FORMAT(periode,'%Y-%m-%d') AS p, actual, target, sales
+        FROM kpi_fcost
+        WHERE section = ? AND periode IN (" . implode(',', array_fill(0, 12, '?')) . ")
+        ORDER BY periode ASC
+    ");
+    $stmt2->execute(array_merge([$view_section], $periodes_view));
+    foreach ($stmt2->fetchAll() as $row) {
+        $existing[$row['p']] = $row;
+    }
+    error_log("Loaded " . count($existing) . " existing records");
+} catch (Exception $e) {
+    error_log("❌ Load data error: " . $e->getMessage());
 }
 
 $filled = 0;

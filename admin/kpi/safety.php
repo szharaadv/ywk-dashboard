@@ -12,83 +12,167 @@ $fy_list  = ['fy2025' => 2025, 'fy2026' => 2026, 'fy2027' => 2027];
 function fyToPeriodes(string $fy): array {
     $year = (int) str_replace('fy', '', $fy);
     $periodes = [];
-    for ($m = 4; $m <= 12; $m++) $periodes[] = sprintf('%d-%02d-01', $year, $m);
-    for ($m = 1; $m <= 3; $m++)  $periodes[] = sprintf('%d-%02d-01', $year + 1, $m);
+    for ($m = 4; $m <= 12; $m++) {
+        $periodes[] = sprintf('%d-%02d-01', $year, $m);
+    }
+    for ($m = 1; $m <= 3; $m++) {
+        $periodes[] = sprintf('%d-%02d-01', $year + 1, $m);
+    }
     return $periodes;
 }
 
-$alert = ''; $alert_type = '';
+$alert = '';
+$alert_type = '';
+
+// ===== DEBUG LOG START =====
+error_log("\n" . str_repeat("=", 60));
+error_log("SAFETY.PHP - " . date('Y-m-d H:i:s'));
+error_log("REQUEST: " . $_SERVER['REQUEST_METHOD']);
+error_log("POST keys: " . implode(', ', array_keys($_POST ?? [])));
 
 // ===== HANDLE SAVE =====
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save'])) {
+    error_log(">>> SAVE TRIGGERED");
+    
     $fy      = $_POST['fy']      ?? 'fy2026';
     $section = $_POST['section'] ?? 'MS1';
     $periodes = fyToPeriodes($fy);
 
-    $stmt = $db->prepare("
-        INSERT INTO kpi_safety (periode, section, minor, significant, fatality, target)
-        VALUES (?, ?, ?, ?, ?, ?)
-        ON DUPLICATE KEY UPDATE
-            minor       = VALUES(minor),
-            significant = VALUES(significant),
-            fatality    = VALUES(fatality),
-            target      = VALUES(target)
-    ");
+    error_log("FY: $fy | Section: $section");
 
     $saved = 0;
-    foreach ($periodes as $i => $periode) {
-        $minor       = $_POST['minor'][$i]       ?? '';
-        $significant = $_POST['significant'][$i] ?? '';
-        $fatality    = $_POST['fatality'][$i]    ?? '';
-        $target      = $_POST['target'][$i]      ?? '';
-
-        if ($minor==='' && $significant==='' && $fatality==='' && $target==='') continue;
-
-        $stmt->execute([
-            $periode, $section,
-            $minor       !== '' ? (int)$minor       : null,
-            $significant !== '' ? (int)$significant : null,
-            $fatality    !== '' ? (int)$fatality    : null,
-            $target      !== '' ? (int)$target      : null,
-        ]);
-        $saved++;
+    $failed = 0;
+    $error_details = [];
+    
+    try {
+        $stmt = $db->prepare("
+            INSERT INTO kpi_safety (periode, section, ltifr, tifr, severity)
+            VALUES (?, ?, ?, ?, ?)
+            ON DUPLICATE KEY UPDATE
+                ltifr    = VALUES(ltifr),
+                tifr     = VALUES(tifr),
+                severity = VALUES(severity)
+        ");
+        error_log("Prepared statement OK");
+    } catch (Exception $e) {
+        error_log("❌ PREPARE ERROR: " . $e->getMessage());
+        $alert = "❌ Database error: " . $e->getMessage();
+        $alert_type = 'danger';
+        goto skip_save;
     }
 
-    $alert      = "✓ $saved data berhasil disimpan untuk $section - " . strtoupper($fy);
-    $alert_type = 'success';
+    foreach ($periodes as $i => $periode) {
+        $ltifr   = $_POST['ltifr'][$i]   ?? '';
+        $tifr    = $_POST['tifr'][$i]    ?? '';
+        $severity = $_POST['severity'][$i] ?? '';
+
+        error_log("  Index $i - Periode: $periode");
+
+        if ($ltifr === '' && $tifr === '' && $severity === '') {
+            error_log("    → Skipped (all empty)");
+            continue;
+        }
+
+        try {
+            $ltifrVal   = $ltifr   !== '' ? (float)$ltifr   : null;
+            $tifrVal    = $tifr    !== '' ? (float)$tifr    : null;
+            $severityVal = $severity !== '' ? (int)$severity : null;
+
+            error_log("    → Values: ltifr=$ltifrVal, tifr=$tifrVal, severity=$severityVal");
+
+            $stmt->execute([
+                $periode,
+                $section,
+                $ltifrVal,
+                $tifrVal,
+                $severityVal,
+            ]);
+            $saved++;
+            error_log("    ✓ Success (total: $saved)");
+            
+        } catch (PDOException $e) {
+            $failed++;
+            $error_msg = "Periode $periode: " . $e->getMessage();
+            error_log("    ✗ PDOException: $error_msg");
+            $error_details[] = $error_msg;
+        } catch (Exception $e) {
+            $failed++;
+            $error_msg = "Periode $periode: " . $e->getMessage();
+            error_log("    ✗ Exception: $error_msg");
+            $error_details[] = $error_msg;
+        }
+    }
+
+    if ($failed > 0) {
+        $alert = "⚠️ $saved data berhasil, $failed data gagal";
+        $alert_type = 'danger';
+    } else {
+        $alert = "✓ $saved data berhasil disimpan untuk $section - " . strtoupper($fy);
+        $alert_type = 'success';
+    }
+    
+    error_log("<<< SAVE END - Saved: $saved | Failed: $failed");
 }
+
+skip_save:
+error_log("=== SAFETY.PHP END ===\n");
 
 // ===== HANDLE DELETE =====
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_periode'])) {
-    $db->prepare("DELETE FROM kpi_safety WHERE periode = ? AND section = ?")
-       ->execute([$_POST['delete_periode'], $_POST['delete_section']]);
-    $alert = '✓ Data berhasil dihapus.'; $alert_type = 'success';
+    error_log(">>> DELETE TRIGGERED");
+    $periode = $_POST['delete_periode'];
+    $section = $_POST['delete_section'];
+    
+    try {
+        $db->prepare("DELETE FROM kpi_safety WHERE periode = ? AND section = ?")
+           ->execute([$periode, $section]);
+        error_log("✓ Deleted periode=$periode, section=$section");
+        $alert      = '✓ Data berhasil dihapus.';
+        $alert_type = 'success';
+    } catch (Exception $e) {
+        error_log("❌ DELETE ERROR: " . $e->getMessage());
+        $alert = "❌ Delete error: " . $e->getMessage();
+        $alert_type = 'danger';
+    }
 }
 
-// ===== LOAD EXISTING =====
+// ===== LOAD EXISTING DATA =====
 $view_fy      = $_GET['fy']      ?? 'fy2026';
 $view_section = $_GET['section'] ?? 'MS1';
 $periodes_view = fyToPeriodes($view_fy);
 
 $existing = [];
-$stmt2 = $db->prepare("
-    SELECT DATE_FORMAT(periode,'%Y-%m-%d') AS p,
-           minor, significant, fatality, target
-    FROM kpi_safety
-    WHERE section = ? AND periode IN (" . implode(',', array_fill(0,12,'?')) . ")
-    ORDER BY periode ASC
-");
-$stmt2->execute(array_merge([$view_section], $periodes_view));
-foreach ($stmt2->fetchAll() as $row) $existing[$row['p']] = $row;
+try {
+    $stmt2 = $db->prepare("
+        SELECT DATE_FORMAT(periode,'%Y-%m-%d') AS p, ltifr, tifr, severity
+        FROM kpi_safety
+        WHERE section = ? AND periode IN (" . implode(',', array_fill(0, 12, '?')) . ")
+        ORDER BY periode ASC
+    ");
+    $stmt2->execute(array_merge([$view_section], $periodes_view));
+    foreach ($stmt2->fetchAll() as $row) {
+        $existing[$row['p']] = $row;
+    }
+    error_log("Loaded " . count($existing) . " existing records");
+} catch (Exception $e) {
+    error_log("❌ Load data error: " . $e->getMessage());
+}
+
+$filled = 0;
+foreach ($periodes_view as $p) {
+    if (isset($existing[$p]) && $existing[$p]['ltifr'] !== null) $filled++;
+}
+$pct_filled = round($filled / 12 * 100);
 ?>
 <!DOCTYPE html>
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <title>Safety Input — Admin YWK</title>
+    <title>Safety KPI Input — Admin YWK</title>
     <style>
         * { box-sizing:border-box; margin:0; padding:0; }
         body { font-family:'Segoe UI',sans-serif; background:#f0f2f5; }
+
         .topbar {
             background: linear-gradient(135deg, #7B0000 0%, #D0021B 100%);
             padding: 12px 1.5rem;
@@ -98,74 +182,104 @@ foreach ($stmt2->fetchAll() as $row) $existing[$row['p']] = $row;
         .back-btn { font-size:12px; color:rgba(255,255,255,0.75); text-decoration:none; }
         .back-btn:hover { color:#fff; }
         .topbar-title { font-size:15px; font-weight:700; color:#fff; }
+
         .content { padding:1.25rem; display:flex; flex-direction:column; gap:1rem; max-width:1400px; }
+
         .card { background:#fff; border:1px solid #e5e7eb; border-radius:12px; padding:1.25rem; }
-        .card-title { font-size:11px; font-weight:700; color:#6b7280; text-transform:uppercase; letter-spacing:0.05em; margin-bottom:1rem; }
-        .fy-tabs, .section-tabs { display:flex; gap:4px; margin-bottom:1rem; }
-        .fy-tab, .section-tab {
+        .card-title {
+            font-size:11px; font-weight:700; color:#6b7280;
+            text-transform:uppercase; letter-spacing:0.05em; margin-bottom:1rem;
+        }
+
+        .section-tabs, .fy-tabs { display:flex; gap:4px; margin-bottom:1rem; flex-wrap:wrap; }
+        .section-tab {
+            padding:6px 14px; font-size:11px; font-weight:700;
+            border:1.5px solid #e5e7eb; border-radius:20px;
+            background:#fff; color:#6b7280; cursor:pointer; text-decoration:none;
+            transition:all 0.15s;
+        }
+        .section-tab:hover { border-color:#D0021B; color:#D0021B; }
+        .section-tab.active { background:#D0021B; border-color:#D0021B; color:#fff; }
+        .fy-tab {
             padding:5px 12px; font-size:11px; font-weight:700;
             border:1.5px solid #e5e7eb; border-radius:20px;
-            background:#fff; color:#6b7280; cursor:pointer; text-decoration:none; transition:all 0.15s;
+            background:#fff; color:#6b7280; cursor:pointer; text-decoration:none;
+            transition:all 0.15s;
         }
-        .fy-tab:hover    { border-color:#185FA5; color:#185FA5; }
-        .fy-tab.active   { background:#185FA5; border-color:#185FA5; color:#fff; }
-        .section-tab:hover  { border-color:#D0021B; color:#D0021B; }
-        .section-tab.active { background:#D0021B; border-color:#D0021B; color:#fff; }
+        .fy-tab:hover { border-color:#185FA5; color:#185FA5; }
+        .fy-tab.active { background:#185FA5; border-color:#185FA5; color:#fff; }
+
         .input-table { width:100%; border-collapse:collapse; font-size:12px; }
         .input-table th {
-            padding:8px 6px; background:#f4f5f7; text-align:center;
+            padding:8px 10px; background:#f4f5f7; text-align:center;
             font-size:10px; font-weight:700; color:#6b7280;
             text-transform:uppercase; letter-spacing:0.04em;
         }
-        .input-table th:first-child { text-align:left; width:120px; }
-        .input-table td { padding:5px 4px; border-bottom:1px solid #f0f0f0; text-align:center; }
-        .input-table td:first-child { text-align:left; font-weight:600; color:#374151; padding-left:6px; }
+        .input-table th:first-child { text-align:left; min-width:100px; }
+        .input-table td { padding:6px 8px; border-bottom:1px solid #f0f0f0; text-align:center; }
+        .input-table td:first-child { text-align:left; font-weight:600; color:#374151; }
+
         .num-input {
-            width:52px; padding:4px 4px; font-size:12px; text-align:center;
-            border:1px solid #e5e7eb; border-radius:5px; outline:none;
+            width:75px; padding:4px 4px; font-size:10px; text-align:center;
+            border:1px solid #e5e7eb; border-radius:6px; outline:none;
+            transition:border-color 0.15s;
         }
         .num-input:focus { border-color:#D0021B; }
         .num-input.has-value { background:#EAF3DE; border-color:#3B6D11; }
+
         .btn-save {
             background:#D0021B; color:#fff; border:none; border-radius:8px;
-            padding:9px 24px; font-size:13px; font-weight:600; cursor:pointer; margin-top:1rem;
+            padding:10px 28px; font-size:13px; font-weight:600; cursor:pointer;
+            margin-top:1rem;
         }
         .btn-save:hover { background:#7B0000; }
         .btn-cancel {
             background:#fff; color:#6b7280; border:1px solid #e5e7eb;
-            border-radius:8px; padding:9px 16px; font-size:13px;
+            border-radius:8px; padding:10px 20px; font-size:13px;
             text-decoration:none; display:inline-block; margin-top:1rem; margin-left:8px;
         }
-        .alert-success { background:#EAF3DE; color:#3B6D11; padding:10px 14px; border-radius:8px; font-size:13px; }
-        .alert-danger  { background:#FDECEA; color:#7B0000; padding:10px 14px; border-radius:8px; font-size:13px; }
+        .btn-cancel:hover { background:#f4f5f7; }
+
         .data-table { width:100%; border-collapse:collapse; font-size:12px; }
         .data-table th {
             padding:8px 10px; background:#f4f5f7; text-align:left;
             font-size:10px; font-weight:700; color:#6b7280;
             text-transform:uppercase; letter-spacing:0.04em;
         }
-        .data-table td { padding:7px 10px; border-bottom:1px solid #f0f0f0; color:#374151; }
+        .data-table td { padding:8px 10px; border-bottom:1px solid #f0f0f0; color:#374151; }
         .data-table tr:last-child td { border-bottom:none; }
         .data-table tr:hover td { background:#fafafa; }
+
         .btn-del {
             background:#fff; color:#D0021B; border:1px solid #D0021B;
             border-radius:6px; font-size:10px; padding:2px 8px; cursor:pointer;
         }
         .btn-del:hover { background:#FDECEA; }
-        .badge-ok  { background:#EAF3DE; color:#3B6D11; font-size:10px; font-weight:700; padding:2px 8px; border-radius:20px; }
-        .badge-bad { background:#FDECEA; color:#D0021B; font-size:10px; font-weight:700; padding:2px 8px; border-radius:20px; }
+
+        .alert-success { background:#EAF3DE; color:#3B6D11; padding:10px 14px; border-radius:8px; font-size:13px; }
+        .alert-danger  { background:#FDECEA; color:#7B0000; padding:10px 14px; border-radius:8px; font-size:13px; }
+
         .progress-bar-wrap { background:#f0f0f0; border-radius:4px; height:6px; margin-top:4px; }
         .progress-bar-fill { height:100%; border-radius:4px; background:#D0021B; transition:width 0.3s ease; }
         .progress-label { font-size:10px; color:#6b7280; margin-top:3px; }
-        .row-label { display:flex; align-items:center; gap:6px; }
-        .row-dot { width:10px; height:10px; border-radius:50%; flex-shrink:0; }
+
+        .unit-note {
+            font-size:11px; color:#6b7280; margin-bottom:0.75rem;
+            padding:6px 10px; background:#fffbeb; border-left:3px solid #f59e0b;
+            border-radius:0 6px 6px 0;
+        }
+
+        .row-ltifr { background:#fff; }
+        .row-tifr { background:#fef9f0; }
+        .row-severity { background:#f9fafb; }
     </style>
 </head>
 <body>
+
 <div class="topbar">
     <div class="topbar-left">
         <a href="index.php" class="back-btn">← Back</a>
-        <div class="topbar-title">Input Safety</div>
+        <div class="topbar-title">Input Safety KPI</div>
     </div>
     <div style="font-size:12px; color:rgba(255,255,255,0.7);">
         Section: <?= $view_section ?> · <?= strtoupper($view_fy) ?>
@@ -201,61 +315,67 @@ foreach ($stmt2->fetchAll() as $row) $existing[$row['p']] = $row;
             <?php endforeach; ?>
         </div>
 
+        <div class="unit-note">
+            💡 Masukkan <strong>LTIFR (Lost Time Injury Frequency Rate)</strong>, <strong>TIFR (Total Injury Frequency Rate)</strong>, dan <strong>Severity Index</strong>.
+        </div>
+
         <form method="POST">
             <input type="hidden" name="save" value="1">
             <input type="hidden" name="fy" value="<?= $view_fy ?>">
             <input type="hidden" name="section" value="<?= $view_section ?>">
 
+            <div style="overflow-x:auto;">
             <table class="input-table">
                 <thead>
                     <tr>
                         <th>Row</th>
-                        <?php foreach ($months as $m): ?>
-                        <th><?= $m ?></th>
-                        <?php endforeach; ?>
+                        <?php foreach ($months as $m): ?><th><?= $m ?></th><?php endforeach; ?>
                     </tr>
                 </thead>
                 <tbody>
-                    <?php
-                    $rows_input = [
-                        'minor'       => ['label'=>'Minor',       'color'=>'#854F0B'],
-                        'significant' => ['label'=>'Significant', 'color'=>'#D0021B'],
-                        'fatality'    => ['label'=>'Fatality',    'color'=>'#501313'],
-                        'target'      => ['label'=>'Target',      'color'=>'#6b7280'],
-                    ];
-                    foreach ($rows_input as $field => $meta):
-                    ?>
-                    <tr>
-                        <td>
-                            <div class="row-label">
-                                <div class="row-dot" style="background:<?= $meta['color'] ?>;"></div>
-                                <?= $meta['label'] ?>
-                            </div>
-                        </td>
+                    <tr class="row-ltifr">
+                        <td>LTIFR</td>
                         <?php foreach ($periodes_view as $i => $p): ?>
                         <td>
-                            <input type="number" name="<?= $field ?>[]"
-                                   class="num-input <?= isset($existing[$p]) && $existing[$p][$field] !== null ? 'has-value' : '' ?>"
-                                   value="<?= isset($existing[$p]) && $existing[$p][$field] !== null ? $existing[$p][$field] : '' ?>"
+                            <input type="number" name="ltifr[]"
+                                   class="num-input <?= isset($existing[$p]) && $existing[$p]['ltifr'] !== null ? 'has-value' : '' ?>"
+                                   value="<?= isset($existing[$p]) ? ($existing[$p]['ltifr'] ?? '') : '' ?>"
+                                   min="0" step="0.01" placeholder="—">
+                        </td>
+                        <?php endforeach; ?>
+                    </tr>
+                    <tr class="row-tifr">
+                        <td>TIFR</td>
+                        <?php foreach ($periodes_view as $i => $p): ?>
+                        <td>
+                            <input type="number" name="tifr[]"
+                                   class="num-input <?= isset($existing[$p]) && $existing[$p]['tifr'] !== null ? 'has-value' : '' ?>"
+                                   value="<?= isset($existing[$p]) ? ($existing[$p]['tifr'] ?? '') : '' ?>"
+                                   min="0" step="0.01" placeholder="—">
+                        </td>
+                        <?php endforeach; ?>
+                    </tr>
+                    <tr class="row-severity">
+                        <td>Severity Index</td>
+                        <?php foreach ($periodes_view as $i => $p): ?>
+                        <td>
+                            <input type="number" name="severity[]"
+                                   class="num-input <?= isset($existing[$p]) && $existing[$p]['severity'] !== null ? 'has-value' : '' ?>"
+                                   value="<?= isset($existing[$p]) ? ($existing[$p]['severity'] ?? '') : '' ?>"
                                    min="0" step="1" placeholder="—">
                         </td>
                         <?php endforeach; ?>
                     </tr>
-                    <?php endforeach; ?>
                 </tbody>
             </table>
+            </div>
 
-            <?php
-            $filled = 0;
-            foreach ($periodes_view as $p) {
-                if (isset($existing[$p])) $filled++;
-            }
-            $pct = round($filled / 12 * 100);
-            ?>
             <div style="margin-top:12px;">
-                <div class="progress-label">Progress pengisian: <?= $filled ?>/12 bulan (<?= $pct ?>%)</div>
+                <div class="progress-label">
+                    Progress pengisian: <?= $filled ?>/12 bulan (<?= $pct_filled ?>%)
+                </div>
                 <div class="progress-bar-wrap">
-                    <div class="progress-bar-fill" style="width:<?= $pct ?>%;"></div>
+                    <div class="progress-bar-fill" style="width:<?= $pct_filled ?>%;"></div>
                 </div>
             </div>
 
@@ -284,35 +404,20 @@ foreach ($stmt2->fetchAll() as $row) $existing[$row['p']] = $row;
                 <tr>
                     <th>Periode</th>
                     <th>Section</th>
-                    <th>Minor</th>
-                    <th>Significant</th>
-                    <th>Fatality</th>
-                    <th>Target</th>
-                    <th>Status</th>
+                    <th>LTIFR</th>
+                    <th>TIFR</th>
+                    <th>Severity</th>
                     <th></th>
                 </tr>
             </thead>
             <tbody>
-                <?php foreach ($existing as $p => $row):
-                    $total = ($row['minor']??0) + ($row['significant']??0) + ($row['fatality']??0);
-                    $isOk  = $total === 0;
-                ?>
+                <?php foreach ($existing as $p => $row): ?>
                 <tr>
                     <td><?= date('M Y', strtotime($p)) ?></td>
                     <td><?= $view_section ?></td>
-                    <td><?= $row['minor']       ?? '—' ?></td>
-                    <td style="font-weight:700; color:<?= ($row['significant']??0)>0 ? '#D0021B' : '#1a1a1a' ?>;">
-                        <?= $row['significant'] ?? '—' ?>
-                    </td>
-                    <td style="font-weight:700; color:<?= ($row['fatality']??0)>0 ? '#501313' : '#1a1a1a' ?>;">
-                        <?= $row['fatality']    ?? '—' ?>
-                    </td>
-                    <td><?= $row['target']      ?? '—' ?></td>
-                    <td>
-                        <span class="<?= $isOk ? 'badge-ok' : 'badge-bad' ?>">
-                            <?= $isOk ? '✓ Zero Accident' : '⚠ Ada Insiden' ?>
-                        </span>
-                    </td>
+                    <td><?= $row['ltifr'] !== null ? number_format($row['ltifr'], 2) : '—' ?></td>
+                    <td><?= $row['tifr'] !== null ? number_format($row['tifr'], 2) : '—' ?></td>
+                    <td><?= $row['severity'] !== null ? $row['severity'] : '—' ?></td>
                     <td>
                         <form method="POST" style="display:inline"
                               onsubmit="return confirm('Hapus data <?= date('M Y', strtotime($p)) ?>?')">

@@ -237,9 +237,9 @@ if (count($_FILES['slides']['name']) > $MAX_SLIDES) {
             <div class="slide-grid">
                 <?php foreach ($currentSlides as $i => $slide): ?>
                 <div class="slide-item">
-                    <img src="/assets/ppm-slides/<?= basename($slide) ?>"
-                         alt="Slide <?= $i+1 ?>"
-                         loading="lazy">
+                    <img src="../../assets/ppm-slides/<?= basename($slide) ?>"
+                        alt="Slide <?= $i+1 ?>"
+                        loading="lazy">
                     <div class="slide-num">Slide <?= $i+1 ?></div>
                 </div>
                 <?php endforeach; ?>

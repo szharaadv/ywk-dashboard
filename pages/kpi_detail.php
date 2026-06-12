@@ -867,7 +867,9 @@ function calcYAxis(datasets,kpi) {
 function buildKpiDatasets(json,section,kpi) {
     const color=SEC_COLOR[section]||'#185FA5';
     const data=json.data,dataPrev=json.data_prev,compare=json.compare;
-    const curFY=json.cur_fy??'FY2026',prevFY=json.prev_fy??'FY2025';
+    const yearStr='<?= $year ?>';
+    const curFY=json.cur_fy??(yearStr!=='all'?yearStr.toUpperCase():'FY2026');
+    const prevFY=json.prev_fy??'FY2025';
     if (!data[section]) return [];
 
     if (kpi==='operation_ratio') {
@@ -948,7 +950,9 @@ function fillKpiTable(json,section,kpi) {
     const tbody=document.getElementById('tbody-'+sid);
     const color=SEC_COLOR[section];
     const data=json.data,dataPrev=json.data_prev,compare=json.compare;
-    const curFY=json.cur_fy??'FY2026',prevFY=json.prev_fy??'FY2025';
+    const yearStr='<?= $year ?>';
+    const curFY=json.cur_fy??(yearStr!=='all'?yearStr.toUpperCase():'FY2026');
+    const prevFY=json.prev_fy??'FY2025';
     if (!tbody||!data[section]) return;
 
     const fmt=(v,overrideKpi)=>{

@@ -64,15 +64,15 @@ $today     = new DateTime();
 $last_acc  = new DateTime($last_accident_date);
 $days_safe = (int)$today->diff($last_acc)->days;
 
-$lp_sf = getLastPeriode($db, 'kpi_safety', $where, $params, 'minor', true);
+$lp_sf = getLastPeriode($db, 'kpi_safety', $where, $params, 'ltifr', true);
 $sf    = ['total' => 0, 'target' => 0, 'periode' => null, 'days_safe' => $days_safe, 'bulan' => 0];
 if ($lp_sf) {
     $w2 = $where . " AND periode <= :lp_sf";
     $p2 = array_merge($params, [':lp_sf' => $lp_sf]);
     $stmt = $db->prepare("
         SELECT
-            SUM(minor + significant + fatality) AS total_accident,
-            SUM(target) AS target,
+            SUM(severity) AS total_accident,
+            0 AS target,
             COUNT(DISTINCT periode) AS bulan,
             MIN(periode) AS first_p
         FROM kpi_safety $w2
@@ -82,7 +82,7 @@ if ($lp_sf) {
     $total = (int)($row['total_accident'] ?? 0);
     $sf    = [
         'total'     => $total,
-        'target'    => (int)($row['target'] ?? 0),
+        'target'    => 0,
         'periode'   => rangeLabel($row['first_p'], $lp_sf),
         'days_safe' => $total === 0 ? $days_safe : 0,
         'bulan'     => (int)$row['bulan'],

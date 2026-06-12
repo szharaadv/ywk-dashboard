@@ -33,25 +33,38 @@ error_log("POST keys: " . implode(', ', array_keys($_POST ?? [])));
 
 // ===== HANDLE SAVE =====
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save'])) {
-    error_log("SAVE triggered");
+    error_log(">>> SAVE TRIGGERED");
     
     $fy      = $_POST['fy']      ?? 'fy2026';
     $section = $_POST['section'] ?? 'MS1';
     
     error_log("FY: $fy");
     error_log("Section: $section");
-    error_log("Actual array: " . json_encode($_POST['actual'] ?? []));
-    error_log("Target array: " . json_encode($_POST['target'] ?? []));
+    error_log("POST actual array: " . json_encode($_POST['actual'] ?? []));
+    error_log("POST target array: " . json_encode($_POST['target'] ?? []));
+    error_log("POST actual count: " . count($_POST['actual'] ?? []));
+    error_log("POST target count: " . count($_POST['target'] ?? []));
     
     $periodes = fyToPeriodes($fy);
-    error_log("Periodes: " . json_encode($periodes));
+    error_log("Periodes count: " . count($periodes));
 
     $saved = 0;
-    $stmt = $db->prepare("
-        INSERT INTO kpi_operation_ratio (periode, section, actual, target)
-        VALUES (?, ?, ?, ?)
-        ON DUPLICATE KEY UPDATE actual = VALUES(actual), target = VALUES(target)
-    ");
+    $failed = 0;
+    $error_details = [];
+    
+    try {
+        $stmt = $db->prepare("
+            INSERT INTO kpi_operation_ratio (periode, section, actual, target)
+            VALUES (?, ?, ?, ?)
+            ON DUPLICATE KEY UPDATE actual = VALUES(actual), target = VALUES(target)
+        ");
+        error_log("Prepared statement OK");
+    } catch (Exception $e) {
+        error_log("❌ PREPARE ERROR: " . $e->getMessage());
+        $alert = "❌ Database error: " . $e->getMessage();
+        $alert_type = 'danger';
+        goto skip_save;
+    }
 
     foreach ($periodes as $i => $periode) {
         $actual = $_POST['actual'][$i] ?? '';
@@ -81,24 +94,44 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save'])) {
             $saved++;
             error_log("  ✓ Success");
         } catch (Exception $e) {
-            error_log("  ✗ Error: " . $e->getMessage());
+            $failed++;
+            $error_msg = "Periode $periode: " . $e->getMessage();
+            error_log("  ✗ Error: $error_msg");
+            $error_details[] = $error_msg;
         }
     }
 
     error_log("Total saved: $saved");
-    $alert      = "✓ $saved data berhasil disimpan untuk $section - " . strtoupper($fy);
-    $alert_type = 'success';
+    
+    if ($failed > 0) {
+        $alert = "⚠️ $saved data berhasil, $failed data gagal";
+        $alert_type = 'danger';
+    } else {
+        $alert = "✓ $saved data berhasil disimpan untuk $section - " . strtoupper($fy);
+        $alert_type = 'success';
+    }
 }
+
+skip_save:
+error_log("=== DEBUG OR.PHP END ===\n");
 
 // ===== HANDLE DELETE ROW =====
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_periode'])) {
     $periode = $_POST['delete_periode'];
     $section = $_POST['delete_section'];
     error_log("DELETE: periode=$periode, section=$section");
-    $db->prepare("DELETE FROM kpi_operation_ratio WHERE periode = ? AND section = ?")
-       ->execute([$periode, $section]);
-    $alert      = '✓ Data berhasil dihapus.';
-    $alert_type = 'success';
+    
+    try {
+        $db->prepare("DELETE FROM kpi_operation_ratio WHERE periode = ? AND section = ?")
+           ->execute([$periode, $section]);
+        error_log("✓ Deleted successfully");
+        $alert      = '✓ Data berhasil dihapus.';
+        $alert_type = 'success';
+    } catch (Exception $e) {
+        error_log("❌ DELETE ERROR: " . $e->getMessage());
+        $alert = "❌ Delete error: " . $e->getMessage();
+        $alert_type = 'danger';
+    }
 }
 
 // ===== LOAD EXISTING DATA =====
@@ -107,19 +140,27 @@ $view_section = $_GET['section'] ?? 'MS1';
 $periodes_view = fyToPeriodes($view_fy);
 
 $existing = [];
-$stmt2 = $db->prepare("
-    SELECT DATE_FORMAT(periode,'%Y-%m-%d') AS p, actual, target
-    FROM kpi_operation_ratio
-    WHERE section = ? AND periode IN (" . implode(',', array_fill(0, 12, '?')) . ")
-    ORDER BY periode ASC
-");
-$stmt2->execute(array_merge([$view_section], $periodes_view));
-foreach ($stmt2->fetchAll() as $row) {
-    $existing[$row['p']] = $row;
+try {
+    $stmt2 = $db->prepare("
+        SELECT DATE_FORMAT(periode,'%Y-%m-%d') AS p, actual, target
+        FROM kpi_operation_ratio
+        WHERE section = ? AND periode IN (" . implode(',', array_fill(0, 12, '?')) . ")
+        ORDER BY periode ASC
+    ");
+    $stmt2->execute(array_merge([$view_section], $periodes_view));
+    foreach ($stmt2->fetchAll() as $row) {
+        $existing[$row['p']] = $row;
+    }
+    error_log("Loaded " . count($existing) . " existing records");
+} catch (Exception $e) {
+    error_log("❌ Load error: " . $e->getMessage());
 }
 
-error_log("Loaded existing data: " . count($existing) . " rows");
-error_log("=== DEBUG OR.PHP END ===\n");
+$filled = 0;
+foreach ($periodes_view as $p) {
+    if (isset($existing[$p]) && $existing[$p]['actual'] !== null) $filled++;
+}
+$pct_filled = round($filled / 12 * 100);
 ?>
 <!DOCTYPE html>
 <html lang="id">
@@ -131,7 +172,7 @@ error_log("=== DEBUG OR.PHP END ===\n");
         body { font-family:'Segoe UI',sans-serif; background:#f0f2f5; }
 
         .topbar {
-            background: linear-gradient(135deg, #7B0000 0%, #D0021B 100%);
+            background: linear-gradient(135deg, #185FA5 0%, #1E90FF 100%);
             padding: 12px 1.5rem;
             display: flex; align-items: center; justify-content: space-between;
         }
@@ -140,7 +181,7 @@ error_log("=== DEBUG OR.PHP END ===\n");
         .back-btn:hover { color:#fff; }
         .topbar-title { font-size:15px; font-weight:700; color:#fff; }
 
-        .content { padding:1.25rem; display:flex; flex-direction:column; gap:1rem; max-width:1200px; }
+        .content { padding:1.25rem; display:flex; flex-direction:column; gap:1rem; max-width:1400px; }
 
         .card { background:#fff; border:1px solid #e5e7eb; border-radius:12px; padding:1.25rem; }
         .card-title {
@@ -148,46 +189,48 @@ error_log("=== DEBUG OR.PHP END ===\n");
             text-transform:uppercase; letter-spacing:0.05em; margin-bottom:1rem;
         }
 
-        .filter-row {
-            display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:1rem;
+        .section-tabs, .fy-tabs { display:flex; gap:4px; margin-bottom:1rem; flex-wrap:wrap; }
+        .section-tab {
+            padding:6px 14px; font-size:11px; font-weight:700;
+            border:1.5px solid #e5e7eb; border-radius:20px;
+            background:#fff; color:#6b7280; cursor:pointer; text-decoration:none;
+            transition:all 0.15s;
         }
-        .filter-label { font-size:12px; font-weight:600; color:#374151; }
-        .filter-select {
-            font-size:12px; border:1px solid #e5e7eb; border-radius:6px;
-            padding:6px 10px; background:#fff; cursor:pointer; outline:none;
+        .section-tab:hover { border-color:#185FA5; color:#185FA5; }
+        .section-tab.active { background:#185FA5; border-color:#185FA5; color:#fff; }
+        .fy-tab {
+            padding:5px 12px; font-size:11px; font-weight:700;
+            border:1.5px solid #e5e7eb; border-radius:20px;
+            background:#fff; color:#6b7280; cursor:pointer; text-decoration:none;
+            transition:all 0.15s;
         }
-        .filter-select:focus { border-color:#D0021B; }
-        .btn-filter {
-            background:#D0021B; color:#fff; border:none; border-radius:8px;
-            padding:7px 16px; font-size:12px; font-weight:600; cursor:pointer;
-        }
-        .btn-filter:hover { background:#7B0000; }
+        .fy-tab:hover { border-color:#185FA5; color:#185FA5; }
+        .fy-tab.active { background:#185FA5; border-color:#185FA5; color:#fff; }
 
-        /* Input table */
         .input-table { width:100%; border-collapse:collapse; font-size:12px; }
         .input-table th {
             padding:8px 10px; background:#f4f5f7; text-align:center;
             font-size:10px; font-weight:700; color:#6b7280;
             text-transform:uppercase; letter-spacing:0.04em;
         }
-        .input-table th:first-child { text-align:left; }
+        .input-table th:first-child { text-align:left; min-width:100px; }
         .input-table td { padding:6px 8px; border-bottom:1px solid #f0f0f0; text-align:center; }
         .input-table td:first-child { text-align:left; font-weight:600; color:#374151; }
 
         .num-input {
-            width:64px; padding:5px 6px; font-size:12px; text-align:center;
+            width:75px; padding:4px 4px; font-size:10px; text-align:center;
             border:1px solid #e5e7eb; border-radius:6px; outline:none;
             transition:border-color 0.15s;
         }
-        .num-input:focus { border-color:#D0021B; }
+        .num-input:focus { border-color:#185FA5; }
         .num-input.has-value { background:#EAF3DE; border-color:#3B6D11; }
 
         .btn-save {
-            background:#D0021B; color:#fff; border:none; border-radius:8px;
+            background:#185FA5; color:#fff; border:none; border-radius:8px;
             padding:10px 28px; font-size:13px; font-weight:600; cursor:pointer;
             margin-top:1rem;
         }
-        .btn-save:hover { background:#7B0000; }
+        .btn-save:hover { background:#1E3A5F; }
         .btn-cancel {
             background:#fff; color:#6b7280; border:1px solid #e5e7eb;
             border-radius:8px; padding:10px 20px; font-size:13px;
@@ -195,7 +238,6 @@ error_log("=== DEBUG OR.PHP END ===\n");
         }
         .btn-cancel:hover { background:#f4f5f7; }
 
-        /* Existing data table */
         .data-table { width:100%; border-collapse:collapse; font-size:12px; }
         .data-table th {
             padding:8px 10px; background:#f4f5f7; text-align:left;
@@ -207,42 +249,26 @@ error_log("=== DEBUG OR.PHP END ===\n");
         .data-table tr:hover td { background:#fafafa; }
 
         .btn-del {
-            background:#fff; color:#D0021B; border:1px solid #D0021B;
+            background:#fff; color:#185FA5; border:1px solid #185FA5;
             border-radius:6px; font-size:10px; padding:2px 8px; cursor:pointer;
         }
-        .btn-del:hover { background:#FDECEA; }
+        .btn-del:hover { background:#E8F1F5; }
 
         .alert-success { background:#EAF3DE; color:#3B6D11; padding:10px 14px; border-radius:8px; font-size:13px; }
-        .alert-danger  { background:#FDECEA; color:#7B0000; padding:10px 14px; border-radius:8px; font-size:13px; }
+        .alert-danger  { background:#FCE4EC; color:#C2185B; padding:10px 14px; border-radius:8px; font-size:13px; }
 
-        .section-tabs { display:flex; gap:4px; margin-bottom:1rem; }
-        .section-tab {
-            padding:6px 14px; font-size:11px; font-weight:700;
-            border:1.5px solid #e5e7eb; border-radius:20px;
-            background:#fff; color:#6b7280; cursor:pointer; text-decoration:none;
-            transition:all 0.15s;
-        }
-        .section-tab:hover { border-color:#D0021B; color:#D0021B; }
-        .section-tab.active { background:#D0021B; border-color:#D0021B; color:#fff; }
-
-        .fy-tabs { display:flex; gap:4px; margin-bottom:1rem; }
-        .fy-tab {
-            padding:5px 12px; font-size:11px; font-weight:700;
-            border:1.5px solid #e5e7eb; border-radius:20px;
-            background:#fff; color:#6b7280; cursor:pointer; text-decoration:none;
-            transition:all 0.15s;
-        }
-        .fy-tab:hover { border-color:#185FA5; color:#185FA5; }
-        .fy-tab.active { background:#185FA5; border-color:#185FA5; color:#fff; }
-
-        .progress-bar-wrap {
-            background:#f0f0f0; border-radius:4px; height:6px; margin-top:4px;
-        }
-        .progress-bar-fill {
-            height:100%; border-radius:4px; background:#D0021B;
-            transition:width 0.3s ease;
-        }
+        .progress-bar-wrap { background:#f0f0f0; border-radius:4px; height:6px; margin-top:4px; }
+        .progress-bar-fill { height:100%; border-radius:4px; background:#185FA5; transition:width 0.3s ease; }
         .progress-label { font-size:10px; color:#6b7280; margin-top:3px; }
+
+        .unit-note {
+            font-size:11px; color:#6b7280; margin-bottom:0.75rem;
+            padding:6px 10px; background:#E8F1F5; border-left:3px solid #185FA5;
+            border-radius:0 6px 6px 0;
+        }
+
+        .row-actual { background:#fff; }
+        .row-target { background:#fef9f0; }
     </style>
 </head>
 <body>
@@ -263,9 +289,8 @@ error_log("=== DEBUG OR.PHP END ===\n");
         <div class="alert-<?= $alert_type ?>"><?= $alert ?></div>
     <?php endif; ?>
 
-    <!-- Input Form -->
     <div class="card">
-        <div class="card-title">Input Data</div>
+        <div class="card-title">Input Data Operation Ratio</div>
 
         <!-- FY Tabs -->
         <div class="fy-tabs">
@@ -287,64 +312,57 @@ error_log("=== DEBUG OR.PHP END ===\n");
             <?php endforeach; ?>
         </div>
 
+        <div class="unit-note">
+            💡 Masukkan <strong>Actual</strong> dan <strong>Target</strong> dalam persen (%).
+            Contoh: 85.5 untuk 85.5%
+        </div>
+
         <form method="POST">
             <input type="hidden" name="save" value="1">
             <input type="hidden" name="fy" value="<?= $view_fy ?>">
             <input type="hidden" name="section" value="<?= $view_section ?>">
 
+            <div style="overflow-x:auto;">
             <table class="input-table">
                 <thead>
                     <tr>
                         <th>Row</th>
-                        <?php foreach ($months as $m): ?>
-                        <th><?= $m ?></th>
-                        <?php endforeach; ?>
+                        <?php foreach ($months as $m): ?><th><?= $m ?></th><?php endforeach; ?>
                     </tr>
                 </thead>
                 <tbody>
-                    <!-- Target row -->
-                    <tr>
-                        <td>Target 2026 (%)</td>
-                        <?php foreach ($periodes_view as $i => $p): ?>
-                        <td>
-                            <input type="number" name="target[]"
-                                   class="num-input <?= isset($existing[$p]) && $existing[$p]['target'] !== null ? 'has-value' : '' ?>"
-                                   value="<?= isset($existing[$p]) ? $existing[$p]['target'] : '' ?>"
-                                   min="0" max="100" step="0.1"
-                                   placeholder="—">
-                        </td>
-                        <?php endforeach; ?>
-                    </tr>
-                    <!-- Actual row -->
-                    <tr>
-                        <td>Operation Ratio (%)</td>
+                    <tr class="row-actual">
+                        <td>Actual (%)</td>
                         <?php foreach ($periodes_view as $i => $p): ?>
                         <td>
                             <input type="number" name="actual[]"
                                    class="num-input <?= isset($existing[$p]) && $existing[$p]['actual'] !== null ? 'has-value' : '' ?>"
-                                   value="<?= isset($existing[$p]) ? $existing[$p]['actual'] : '' ?>"
-                                   min="0" max="100" step="0.1"
-                                   placeholder="—">
+                                   value="<?= isset($existing[$p]) ? ($existing[$p]['actual'] ?? '') : '' ?>"
+                                   min="0" max="100" step="0.01" placeholder="—">
+                        </td>
+                        <?php endforeach; ?>
+                    </tr>
+                    <tr class="row-target">
+                        <td>Target (%)</td>
+                        <?php foreach ($periodes_view as $i => $p): ?>
+                        <td>
+                            <input type="number" name="target[]"
+                                   class="num-input <?= isset($existing[$p]) && $existing[$p]['target'] !== null ? 'has-value' : '' ?>"
+                                   value="<?= isset($existing[$p]) ? ($existing[$p]['target'] ?? '') : '' ?>"
+                                   min="0" max="100" step="0.01" placeholder="—">
                         </td>
                         <?php endforeach; ?>
                     </tr>
                 </tbody>
             </table>
+            </div>
 
-            <?php
-            // Hitung progress pengisian
-            $filled = 0;
-            foreach ($periodes_view as $p) {
-                if (isset($existing[$p]) && $existing[$p]['actual'] !== null) $filled++;
-            }
-            $pct = round($filled / 12 * 100);
-            ?>
             <div style="margin-top:12px;">
                 <div class="progress-label">
-                    Progress pengisian: <?= $filled ?>/12 bulan (<?= $pct ?>%)
+                    Progress pengisian: <?= $filled ?>/12 bulan (<?= $pct_filled ?>%)
                 </div>
                 <div class="progress-bar-wrap">
-                    <div class="progress-bar-fill" style="width:<?= $pct ?>%;"></div>
+                    <div class="progress-bar-fill" style="width:<?= $pct_filled ?>%;"></div>
                 </div>
             </div>
 
@@ -356,7 +374,7 @@ error_log("=== DEBUG OR.PHP END ===\n");
         </form>
     </div>
 
-    <!-- Existing Data Table -->
+    <!-- Existing Data -->
     <div class="card">
         <div class="card-title">
             Data Tersimpan — <?= $view_section ?> · <?= strtoupper($view_fy) ?>
@@ -373,34 +391,34 @@ error_log("=== DEBUG OR.PHP END ===\n");
                 <tr>
                     <th>Periode</th>
                     <th>Section</th>
-                    <th>Actual (%)</th>
-                    <th>Target (%)</th>
+                    <th>Actual</th>
+                    <th>Target</th>
                     <th>Status</th>
                     <th></th>
                 </tr>
             </thead>
             <tbody>
                 <?php foreach ($existing as $p => $row):
-                    $isOk = $row['actual'] !== null && $row['target'] !== null
-                          && $row['actual'] >= $row['target'];
+                    $isOk = $row['actual'] !== null && $row['target'] !== null && $row['actual'] >= $row['target'];
                 ?>
                 <tr>
                     <td><?= date('M Y', strtotime($p)) ?></td>
                     <td><?= $view_section ?></td>
                     <td style="font-weight:700;">
-                        <?= $row['actual'] !== null ? $row['actual'].'%' : '—' ?>
+                        <?= $row['actual'] !== null ? number_format($row['actual'], 2) . '%' : '—' ?>
                     </td>
-                    <td><?= $row['target'] !== null ? $row['target'].'%' : '—' ?></td>
+                    <td>
+                        <?= $row['target'] !== null ? number_format($row['target'], 2) . '%' : '—' ?>
+                    </td>
                     <td>
                         <?php if ($row['actual'] !== null && $row['target'] !== null): ?>
-                        <span style="font-size:10px; font-weight:700; padding:2px 8px;
-                                     border-radius:20px;
-                                     background:<?= $isOk ? '#EAF3DE' : '#FDECEA' ?>;
-                                     color:<?= $isOk ? '#3B6D11' : '#D0021B' ?>;">
+                        <span style="font-size:10px; font-weight:700; padding:2px 8px; border-radius:20px;
+                                     background:<?= $isOk ? '#EAF3DE' : '#FCE4EC' ?>;
+                                     color:<?= $isOk ? '#3B6D11' : '#C2185B' ?>;">
                             <?= $isOk ? '✓ On Target' : '⚠ Off Target' ?>
                         </span>
                         <?php else: ?>
-                        <span style="font-size:10px; color:#9ca3af;">—</span>
+                        <span style="font-size:10px;color:#9ca3af;">—</span>
                         <?php endif; ?>
                     </td>
                     <td>
@@ -421,7 +439,6 @@ error_log("=== DEBUG OR.PHP END ===\n");
 </div>
 
 <script>
-// Highlight input yang diisi
 document.querySelectorAll('.num-input').forEach(input => {
     input.addEventListener('input', () => {
         input.classList.toggle('has-value', input.value !== '');

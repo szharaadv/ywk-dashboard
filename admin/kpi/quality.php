@@ -24,22 +24,43 @@ function fyToPeriodes(string $fy): array {
 $alert = '';
 $alert_type = '';
 
+// ===== DEBUG LOG START =====
+error_log("\n" . str_repeat("=", 60));
+error_log("QUALITY.PHP - " . date('Y-m-d H:i:s'));
+error_log("REQUEST: " . $_SERVER['REQUEST_METHOD']);
+error_log("POST keys: " . implode(', ', array_keys($_POST ?? [])));
+
 // ===== HANDLE SAVE =====
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save'])) {
+    error_log(">>> SAVE TRIGGERED");
+    
     $fy      = $_POST['fy']      ?? 'fy2026';
     $section = $_POST['section'] ?? 'MS1';
     $periodes = fyToPeriodes($fy);
 
+    error_log("FY: $fy | Section: $section");
+
     $saved = 0;
-    $stmt = $db->prepare("
-        INSERT INTO kpi_quality (periode, section, reject_inhouse, reject_target, customer_claim, claim_target)
-        VALUES (?, ?, ?, ?, ?, ?)
-        ON DUPLICATE KEY UPDATE
-            reject_inhouse  = VALUES(reject_inhouse),
-            reject_target   = VALUES(reject_target),
-            customer_claim  = VALUES(customer_claim),
-            claim_target    = VALUES(claim_target)
-    ");
+    $failed = 0;
+    $error_details = [];
+    
+    try {
+        $stmt = $db->prepare("
+            INSERT INTO kpi_quality (periode, section, reject_inhouse, reject_target, customer_claim, claim_target)
+            VALUES (?, ?, ?, ?, ?, ?)
+            ON DUPLICATE KEY UPDATE
+                reject_inhouse  = VALUES(reject_inhouse),
+                reject_target   = VALUES(reject_target),
+                customer_claim  = VALUES(customer_claim),
+                claim_target    = VALUES(claim_target)
+        ");
+        error_log("Prepared statement OK");
+    } catch (Exception $e) {
+        error_log("❌ PREPARE ERROR: " . $e->getMessage());
+        $alert = "❌ Database error: " . $e->getMessage();
+        $alert_type = 'danger';
+        goto skip_save;
+    }
 
     foreach ($periodes as $i => $periode) {
         $reject_inhouse = $_POST['reject_inhouse'][$i] ?? '';
@@ -47,31 +68,76 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save'])) {
         $customer_claim = $_POST['customer_claim'][$i] ?? '';
         $claim_target   = $_POST['claim_target'][$i]   ?? '';
 
-        if ($reject_inhouse === '' && $reject_target === '' && $customer_claim === '' && $claim_target === '') continue;
+        error_log("  Index $i - Periode: $periode");
 
-        $stmt->execute([
-            $periode,
-            $section,
-            $reject_inhouse !== '' ? (float)$reject_inhouse : null,
-            $reject_target  !== '' ? (float)$reject_target  : null,
-            $customer_claim !== '' ? (int)$customer_claim   : null,
-            $claim_target   !== '' ? (int)$claim_target     : null,
-        ]);
-        $saved++;
+        if ($reject_inhouse === '' && $reject_target === '' && $customer_claim === '' && $claim_target === '') {
+            error_log("    → Skipped (all empty)");
+            continue;
+        }
+
+        try {
+            $reject_inhouseVal = $reject_inhouse !== '' ? (float)$reject_inhouse : null;
+            $reject_targetVal  = $reject_target  !== '' ? (float)$reject_target  : null;
+            $customer_claimVal = $customer_claim !== '' ? (int)$customer_claim   : null;
+            $claim_targetVal   = $claim_target   !== '' ? (int)$claim_target     : null;
+
+            error_log("    → Values: reject_inhouse=$reject_inhouseVal, reject_target=$reject_targetVal, claim=$customer_claimVal, claim_target=$claim_targetVal");
+
+            $stmt->execute([
+                $periode,
+                $section,
+                $reject_inhouseVal,
+                $reject_targetVal,
+                $customer_claimVal,
+                $claim_targetVal,
+            ]);
+            $saved++;
+            error_log("    ✓ Success (total: $saved)");
+            
+        } catch (PDOException $e) {
+            $failed++;
+            $error_msg = "Periode $periode: " . $e->getMessage();
+            error_log("    ✗ PDOException: $error_msg");
+            $error_details[] = $error_msg;
+        } catch (Exception $e) {
+            $failed++;
+            $error_msg = "Periode $periode: " . $e->getMessage();
+            error_log("    ✗ Exception: $error_msg");
+            $error_details[] = $error_msg;
+        }
     }
 
-    $alert      = "✓ $saved data berhasil disimpan untuk $section - " . strtoupper($fy);
-    $alert_type = 'success';
+    if ($failed > 0) {
+        $alert = "⚠️ $saved data berhasil, $failed data gagal";
+        $alert_type = 'danger';
+    } else {
+        $alert = "✓ $saved data berhasil disimpan untuk $section - " . strtoupper($fy);
+        $alert_type = 'success';
+    }
+    
+    error_log("<<< SAVE END - Saved: $saved | Failed: $failed");
 }
+
+skip_save:
+error_log("=== QUALITY.PHP END ===\n");
 
 // ===== HANDLE DELETE =====
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_periode'])) {
+    error_log(">>> DELETE TRIGGERED");
     $periode = $_POST['delete_periode'];
     $section = $_POST['delete_section'];
-    $db->prepare("DELETE FROM kpi_quality WHERE periode = ? AND section = ?")
-       ->execute([$periode, $section]);
-    $alert      = '✓ Data berhasil dihapus.';
-    $alert_type = 'success';
+    
+    try {
+        $db->prepare("DELETE FROM kpi_quality WHERE periode = ? AND section = ?")
+           ->execute([$periode, $section]);
+        error_log("✓ Deleted periode=$periode, section=$section");
+        $alert      = '✓ Data berhasil dihapus.';
+        $alert_type = 'success';
+    } catch (Exception $e) {
+        error_log("❌ DELETE ERROR: " . $e->getMessage());
+        $alert = "❌ Delete error: " . $e->getMessage();
+        $alert_type = 'danger';
+    }
 }
 
 // ===== LOAD EXISTING DATA =====
@@ -80,30 +146,33 @@ $view_section = $_GET['section'] ?? 'MS1';
 $periodes_view = fyToPeriodes($view_fy);
 
 $existing = [];
-$stmt2 = $db->prepare("
-    SELECT DATE_FORMAT(periode,'%Y-%m-%d') AS p,
-           reject_inhouse, reject_target, customer_claim, claim_target
-    FROM kpi_quality
-    WHERE section = ? AND periode IN (" . implode(',', array_fill(0, 12, '?')) . ")
-    ORDER BY periode ASC
-");
-$stmt2->execute(array_merge([$view_section], $periodes_view));
-foreach ($stmt2->fetchAll() as $row) {
-    $existing[$row['p']] = $row;
+try {
+    $stmt2 = $db->prepare("
+        SELECT DATE_FORMAT(periode,'%Y-%m-%d') AS p, reject_inhouse, reject_target, customer_claim, claim_target
+        FROM kpi_quality
+        WHERE section = ? AND periode IN (" . implode(',', array_fill(0, 12, '?')) . ")
+        ORDER BY periode ASC
+    ");
+    $stmt2->execute(array_merge([$view_section], $periodes_view));
+    foreach ($stmt2->fetchAll() as $row) {
+        $existing[$row['p']] = $row;
+    }
+    error_log("Loaded " . count($existing) . " existing records");
+} catch (Exception $e) {
+    error_log("❌ Load data error: " . $e->getMessage());
 }
 
-// Progress: hitung bulan yang ada reject_inhouse terisi
 $filled = 0;
 foreach ($periodes_view as $p) {
     if (isset($existing[$p]) && $existing[$p]['reject_inhouse'] !== null) $filled++;
 }
-$pct = round($filled / 12 * 100);
+$pct_filled = round($filled / 12 * 100);
 ?>
 <!DOCTYPE html>
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <title>Quality Input — Admin YWK</title>
+    <title>Quality KPI Input — Admin YWK</title>
     <style>
         * { box-sizing:border-box; margin:0; padding:0; }
         body { font-family:'Segoe UI',sans-serif; background:#f0f2f5; }
@@ -118,21 +187,15 @@ $pct = round($filled / 12 * 100);
         .back-btn:hover { color:#fff; }
         .topbar-title { font-size:15px; font-weight:700; color:#fff; }
 
-        .content { padding:1.25rem; display:flex; flex-direction:column; gap:1rem; max-width:1300px; }
+        .content { padding:1.25rem; display:flex; flex-direction:column; gap:1rem; max-width:1400px; }
 
         .card { background:#fff; border:1px solid #e5e7eb; border-radius:12px; padding:1.25rem; }
         .card-title {
             font-size:11px; font-weight:700; color:#6b7280;
             text-transform:uppercase; letter-spacing:0.05em; margin-bottom:1rem;
         }
-        .sub-title {
-            font-size:12px; font-weight:700; color:#374151;
-            margin: 1rem 0 0.5rem; padding: 6px 10px;
-            background:#f4f5f7; border-left: 3px solid #D0021B;
-            border-radius: 0 6px 6px 0;
-        }
 
-        .section-tabs, .fy-tabs { display:flex; gap:4px; margin-bottom:1rem; }
+        .section-tabs, .fy-tabs { display:flex; gap:4px; margin-bottom:1rem; flex-wrap:wrap; }
         .section-tab {
             padding:6px 14px; font-size:11px; font-weight:700;
             border:1.5px solid #e5e7eb; border-radius:20px;
@@ -150,18 +213,18 @@ $pct = round($filled / 12 * 100);
         .fy-tab:hover { border-color:#185FA5; color:#185FA5; }
         .fy-tab.active { background:#185FA5; border-color:#185FA5; color:#fff; }
 
-        .input-table { width:100%; border-collapse:collapse; font-size:12px; margin-bottom:0.5rem; }
+        .input-table { width:100%; border-collapse:collapse; font-size:12px; }
         .input-table th {
             padding:8px 10px; background:#f4f5f7; text-align:center;
             font-size:10px; font-weight:700; color:#6b7280;
             text-transform:uppercase; letter-spacing:0.04em;
         }
-        .input-table th:first-child { text-align:left; min-width:140px; }
+        .input-table th:first-child { text-align:left; min-width:100px; }
         .input-table td { padding:6px 8px; border-bottom:1px solid #f0f0f0; text-align:center; }
         .input-table td:first-child { text-align:left; font-weight:600; color:#374151; }
 
         .num-input {
-            width:64px; padding:5px 6px; font-size:12px; text-align:center;
+            width:75px; padding:4px 4px; font-size:10px; text-align:center;
             border:1px solid #e5e7eb; border-radius:6px; outline:none;
             transition:border-color 0.15s;
         }
@@ -204,7 +267,15 @@ $pct = round($filled / 12 * 100);
         .progress-bar-fill { height:100%; border-radius:4px; background:#D0021B; transition:width 0.3s ease; }
         .progress-label { font-size:10px; color:#6b7280; margin-top:3px; }
 
-        .divider { border:none; border-top:2px dashed #e5e7eb; margin:1rem 0; }
+        .unit-note {
+            font-size:11px; color:#6b7280; margin-bottom:0.75rem;
+            padding:6px 10px; background:#fffbeb; border-left:3px solid #f59e0b;
+            border-radius:0 6px 6px 0;
+        }
+
+        .row-inhouse { background:#fff; }
+        .row-target { background:#fef9f0; }
+        .row-claim { background:#f9fafb; }
     </style>
 </head>
 <body>
@@ -225,7 +296,6 @@ $pct = round($filled / 12 * 100);
         <div class="alert-<?= $alert_type ?>"><?= $alert ?></div>
     <?php endif; ?>
 
-    <!-- Input Form -->
     <div class="card">
         <div class="card-title">Input Data Quality</div>
 
@@ -249,13 +319,16 @@ $pct = round($filled / 12 * 100);
             <?php endforeach; ?>
         </div>
 
+        <div class="unit-note">
+            💡 Masukkan <strong>Reject In-house (PPM)</strong>, <strong>Target (PPM)</strong>, <strong>Customer Claim</strong>, dan <strong>Claim Target (PPM)</strong>.
+        </div>
+
         <form method="POST">
             <input type="hidden" name="save" value="1">
             <input type="hidden" name="fy" value="<?= $view_fy ?>">
             <input type="hidden" name="section" value="<?= $view_section ?>">
 
-            <!-- Sub-tabel 1: Reject In House / PPM -->
-            <div class="sub-title">📊 REJECT IN HOUSE / PPM</div>
+            <div style="overflow-x:auto;">
             <table class="input-table">
                 <thead>
                     <tr>
@@ -264,75 +337,60 @@ $pct = round($filled / 12 * 100);
                     </tr>
                 </thead>
                 <tbody>
-                    <tr>
-                        <td>Target (PPM)</td>
-                        <?php foreach ($periodes_view as $i => $p): ?>
-                        <td>
-                            <input type="number" name="reject_target[]"
-                                   class="num-input <?= isset($existing[$p]) && $existing[$p]['reject_target'] !== null ? 'has-value' : '' ?>"
-                                   value="<?= isset($existing[$p]) ? $existing[$p]['reject_target'] : '' ?>"
-                                   min="0" step="1" placeholder="—">
-                        </td>
-                        <?php endforeach; ?>
-                    </tr>
-                    <tr>
-                        <td>Reject In House (PPM)</td>
+                    <tr class="row-inhouse">
+                        <td>Reject In-house (PPM)</td>
                         <?php foreach ($periodes_view as $i => $p): ?>
                         <td>
                             <input type="number" name="reject_inhouse[]"
                                    class="num-input <?= isset($existing[$p]) && $existing[$p]['reject_inhouse'] !== null ? 'has-value' : '' ?>"
-                                   value="<?= isset($existing[$p]) ? $existing[$p]['reject_inhouse'] : '' ?>"
-                                   min="0" step="1" placeholder="—">
+                                   value="<?= isset($existing[$p]) ? ($existing[$p]['reject_inhouse'] ?? '') : '' ?>"
+                                   min="0" step="0.01" placeholder="—">
                         </td>
                         <?php endforeach; ?>
                     </tr>
-                </tbody>
-            </table>
-
-            <hr class="divider">
-
-            <!-- Sub-tabel 2: Customer Claim / Cases -->
-            <div class="sub-title">📋 CUSTOMER CLAIM / CASES</div>
-            <table class="input-table">
-                <thead>
-                    <tr>
-                        <th>Row</th>
-                        <?php foreach ($months as $m): ?><th><?= $m ?></th><?php endforeach; ?>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td>Target (Cases)</td>
+                    <tr class="row-target">
+                        <td>Target In-house (PPM)</td>
                         <?php foreach ($periodes_view as $i => $p): ?>
                         <td>
-                            <input type="number" name="claim_target[]"
-                                   class="num-input <?= isset($existing[$p]) && $existing[$p]['claim_target'] !== null ? 'has-value' : '' ?>"
-                                   value="<?= isset($existing[$p]) ? $existing[$p]['claim_target'] : '' ?>"
-                                   min="0" step="1" placeholder="—">
+                            <input type="number" name="reject_target[]"
+                                   class="num-input <?= isset($existing[$p]) && $existing[$p]['reject_target'] !== null ? 'has-value' : '' ?>"
+                                   value="<?= isset($existing[$p]) ? ($existing[$p]['reject_target'] ?? '') : '' ?>"
+                                   min="0" step="0.01" placeholder="—">
                         </td>
                         <?php endforeach; ?>
                     </tr>
-                    <tr>
-                        <td>Customer Claim (Cases)</td>
+                    <tr class="row-claim">
+                        <td>Customer Claim</td>
                         <?php foreach ($periodes_view as $i => $p): ?>
                         <td>
                             <input type="number" name="customer_claim[]"
                                    class="num-input <?= isset($existing[$p]) && $existing[$p]['customer_claim'] !== null ? 'has-value' : '' ?>"
-                                   value="<?= isset($existing[$p]) ? $existing[$p]['customer_claim'] : '' ?>"
+                                   value="<?= isset($existing[$p]) ? ($existing[$p]['customer_claim'] ?? '') : '' ?>"
+                                   min="0" step="1" placeholder="—">
+                        </td>
+                        <?php endforeach; ?>
+                    </tr>
+                    <tr class="row-target">
+                        <td>Claim Target (PPM)</td>
+                        <?php foreach ($periodes_view as $i => $p): ?>
+                        <td>
+                            <input type="number" name="claim_target[]"
+                                   class="num-input <?= isset($existing[$p]) && $existing[$p]['claim_target'] !== null ? 'has-value' : '' ?>"
+                                   value="<?= isset($existing[$p]) ? ($existing[$p]['claim_target'] ?? '') : '' ?>"
                                    min="0" step="1" placeholder="—">
                         </td>
                         <?php endforeach; ?>
                     </tr>
                 </tbody>
             </table>
+            </div>
 
-            <!-- Progress -->
             <div style="margin-top:12px;">
                 <div class="progress-label">
-                    Progress pengisian: <?= $filled ?>/12 bulan (<?= $pct ?>%)
+                    Progress pengisian: <?= $filled ?>/12 bulan (<?= $pct_filled ?>%)
                 </div>
                 <div class="progress-bar-wrap">
-                    <div class="progress-bar-fill" style="width:<?= $pct ?>%;"></div>
+                    <div class="progress-bar-fill" style="width:<?= $pct_filled ?>%;"></div>
                 </div>
             </div>
 
@@ -344,7 +402,7 @@ $pct = round($filled / 12 * 100);
         </form>
     </div>
 
-    <!-- Existing Data Table -->
+    <!-- Existing Data -->
     <div class="card">
         <div class="card-title">
             Data Tersimpan — <?= $view_section ?> · <?= strtoupper($view_fy) ?>
@@ -361,47 +419,22 @@ $pct = round($filled / 12 * 100);
                 <tr>
                     <th>Periode</th>
                     <th>Section</th>
-                    <th>Reject In House (PPM)</th>
-                    <th>Target PPM</th>
-                    <th>Status Reject</th>
+                    <th>Reject In-house</th>
+                    <th>Target</th>
                     <th>Customer Claim</th>
-                    <th>Target Claim</th>
-                    <th>Status Claim</th>
+                    <th>Claim Target</th>
                     <th></th>
                 </tr>
             </thead>
             <tbody>
-                <?php foreach ($existing as $p => $row):
-                    $okReject = $row['reject_inhouse'] !== null && $row['reject_target'] !== null
-                              && $row['reject_inhouse'] <= $row['reject_target'];
-                    $okClaim  = $row['customer_claim'] !== null && $row['claim_target'] !== null
-                              && $row['customer_claim'] <= $row['claim_target'];
-                ?>
+                <?php foreach ($existing as $p => $row): ?>
                 <tr>
                     <td><?= date('M Y', strtotime($p)) ?></td>
                     <td><?= $view_section ?></td>
-                    <td style="font-weight:700;"><?= $row['reject_inhouse'] ?? '—' ?></td>
-                    <td><?= $row['reject_target'] ?? '—' ?></td>
-                    <td>
-                        <?php if ($row['reject_inhouse'] !== null && $row['reject_target'] !== null): ?>
-                        <span style="font-size:10px; font-weight:700; padding:2px 8px; border-radius:20px;
-                                     background:<?= $okReject ? '#EAF3DE' : '#FDECEA' ?>;
-                                     color:<?= $okReject ? '#3B6D11' : '#D0021B' ?>;">
-                            <?= $okReject ? '✓ On Target' : '⚠ Off Target' ?>
-                        </span>
-                        <?php else: ?><span style="font-size:10px;color:#9ca3af;">—</span><?php endif; ?>
-                    </td>
-                    <td style="font-weight:700;"><?= $row['customer_claim'] ?? '—' ?></td>
-                    <td><?= $row['claim_target'] ?? '—' ?></td>
-                    <td>
-                        <?php if ($row['customer_claim'] !== null && $row['claim_target'] !== null): ?>
-                        <span style="font-size:10px; font-weight:700; padding:2px 8px; border-radius:20px;
-                                     background:<?= $okClaim ? '#EAF3DE' : '#FDECEA' ?>;
-                                     color:<?= $okClaim ? '#3B6D11' : '#D0021B' ?>;">
-                            <?= $okClaim ? '✓ On Target' : '⚠ Off Target' ?>
-                        </span>
-                        <?php else: ?><span style="font-size:10px;color:#9ca3af;">—</span><?php endif; ?>
-                    </td>
+                    <td><?= $row['reject_inhouse'] !== null ? number_format($row['reject_inhouse'], 2) : '—' ?></td>
+                    <td><?= $row['reject_target'] !== null ? number_format($row['reject_target'], 2) : '—' ?></td>
+                    <td><?= $row['customer_claim'] !== null ? $row['customer_claim'] : '—' ?></td>
+                    <td><?= $row['claim_target'] !== null ? $row['claim_target'] : '—' ?></td>
                     <td>
                         <form method="POST" style="display:inline"
                               onsubmit="return confirm('Hapus data <?= date('M Y', strtotime($p)) ?>?')">

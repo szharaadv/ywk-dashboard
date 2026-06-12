@@ -160,9 +160,9 @@ $events = $db->query("
                 <tr>
                     <td>
                         <?php if ($ev['foto']): ?>
-                            <img src="/assets/img/...">
-                                 class="thumb"
-                                 onerror="this.style.display='none'">
+                            <img src="../../assets/img/<?= htmlspecialchars($ev['foto']) ?>"
+                                class="thumb"
+                                onerror="this.style.display='none'">
                         <?php else: ?>
                             <div class="no-foto">📷</div>
                         <?php endif; ?>

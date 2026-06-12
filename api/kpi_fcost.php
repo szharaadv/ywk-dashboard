@@ -1,124 +1,105 @@
 <?php
-header('Content-Type: application/json');
+error_reporting(0);
+ini_set('display_errors', '0');
+ob_start();
+header('Content-Type: application/json; charset=utf-8');
 header('Access-Control-Allow-Origin: *');
-require_once '../config/db.php';
+ob_clean();
 
-$db   = getDB();
+try {
+    $db = new PDO('mysql:host=localhost;dbname=ywk_dashboard;charset=utf8mb4', 'root', '');
+    $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    $db->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
+} catch (PDOException $e) {
+    http_response_code(500);
+    die(json_encode(['error' => 'DB: ' . $e->getMessage()]));
+}
+
 $year = $_GET['year'] ?? 'all';
-
-// ===== Tentukan FY =====
-$fy_map = [
-    'fy2025' => ['label' => 'FY2025', 'start' => '2025-04-01', 'end' => '2026-03-31'],
-    'fy2026' => ['label' => 'FY2026', 'start' => '2026-04-01', 'end' => '2027-03-31'],
-];
-
-if ($year === 'all') {
-    $latest = $db->query("SELECT MAX(periode) FROM kpi_fcost")->fetchColumn();
-    if ($latest) {
-        $latestMonth = (int)(new DateTime($latest))->format('n');
-        $latestYear  = (int)(new DateTime($latest))->format('Y');
-        $cur_fy_key  = ($latestYear > 2026 || ($latestYear === 2026 && $latestMonth >= 4))
-                     ? 'fy2026' : 'fy2025';
-    } else {
-        $cur_fy_key = 'fy2026';
-    }
-} else {
-    $cur_fy_key = $year;
-}
-
-$prev_fy_key  = $cur_fy_key === 'fy2026' ? 'fy2025' : null;
-$cur_fy_info  = $fy_map[$cur_fy_key]  ?? $fy_map['fy2026'];
-$prev_fy_info = $prev_fy_key ? ($fy_map[$prev_fy_key] ?? null) : null;
-$cur_fy_label  = $cur_fy_info['label'];
-$prev_fy_label = $prev_fy_info ? $prev_fy_info['label'] : 'FY2025';
-
 $sections = ['Conrod', 'HDE'];
+$month_labels = ['Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec','Jan','Feb','Mar'];
+$month_map = [4=>0, 5=>1, 6=>2, 7=>3, 8=>4, 9=>5, 10=>6, 11=>7, 12=>8, 1=>9, 2=>10, 3=>11];
+$pct_target = ['Conrod' => 0.50, 'HDE' => 0.15];
 
-// ===== Query current FY =====
-$stmt = $db->prepare("
-    SELECT DATE_FORMAT(periode, '%b %Y') AS label, section, actual, target, sales
-FROM kpi_fcost
-WHERE periode BETWEEN ? AND ?
-ORDER BY periode ASC, section ASC
-");
-$stmt->execute([$cur_fy_info['start'], $cur_fy_info['end']]);
-$rows = $stmt->fetchAll();
-
-// ===== Query prev FY =====
-$rows_prev = [];
-if ($prev_fy_info) {
-    $stmt2 = $db->prepare("
-        SELECT DATE_FORMAT(periode, '%b %Y') AS label, section, actual, target, sales
-        FROM kpi_fcost
-        WHERE periode BETWEEN ? AND ?
-        ORDER BY periode ASC, section ASC
-    ");
-    $stmt2->execute([$prev_fy_info['start'], $prev_fy_info['end']]);
-    $rows_prev = $stmt2->fetchAll();
+if (!function_exists('getFYRange')) {
+    function getFYRange($fy) {
+        $year = (int) str_replace('fy', '', $fy);
+        return ['start' => "$year-04-01", 'end' => ($year + 1) . "-03-31"];
+    }
 }
 
-// ===== Build labels Apr–Mar =====
-$fy_year = (int) str_replace('fy', '', $cur_fy_key);
-$labels  = [];
-for ($m = 4; $m <= 12; $m++) $labels[] = date('M Y', mktime(0,0,0,$m,1,$fy_year));
-for ($m = 1; $m <= 3;  $m++) $labels[] = date('M Y', mktime(0,0,0,$m,1,$fy_year+1));
+function getFcostRows($db, $fyRange) {
+    if (!$fyRange) return [];
+    $stmt = $db->prepare("
+        SELECT periode, section, actual, sales
+        FROM kpi_fcost
+        WHERE periode BETWEEN :fy_start AND :fy_end
+        ORDER BY periode ASC
+    ");
+    $stmt->execute([':fy_start' => $fyRange['start'], ':fy_end' => $fyRange['end']]);
+    return $stmt->fetchAll();
+}
 
-$prev_fy_year = $fy_year - 1;
-$labels_prev  = [];
-for ($m = 4; $m <= 12; $m++) $labels_prev[] = date('M Y', mktime(0,0,0,$m,1,$prev_fy_year));
-for ($m = 1; $m <= 3;  $m++) $labels_prev[] = date('M Y', mktime(0,0,0,$m,1,$prev_fy_year+1));
-
-// ===== Helper =====
-function buildFcostSection(array $rows, array $labels, array $sections): array {
+function remapFcostToMonths($rows, $sections, $month_map, $pct_target) {
     $data = [];
-    foreach ($sections as $section) {
-        $actual = []; $target = []; $sales = []; $pct = [];
-        foreach ($labels as $label) {
-            $found = false;
-            foreach ($rows as $row) {
-                if ($row['label'] === $label && $row['section'] === $section) {
-                    $act  = $row['actual'] !== null ? (float)$row['actual'] : null;
-                    $tgt  = $row['target'] !== null ? (float)$row['target'] : null;
-                    $sal  = $row['sales']  !== null ? (float)$row['sales']  : null;
-                    $p    = ($sal && $sal > 0) ? round($act / $sal * 100, 4) : null;
-                    $actual[] = $act; $target[] = $tgt;
-                    $sales[]  = $sal; $pct[]    = $p;
-                    $found = true; break;
-                }
+    foreach ($sections as $sec) {
+        $pct    = array_fill(0, 12, null);
+        $actual = array_fill(0, 12, null);
+        $sales  = array_fill(0, 12, null);
+        
+        foreach ($rows as $row) {
+            if ($row['section'] !== $sec) continue;
+            $m = (int) date('n', strtotime($row['periode']));
+            $idx = $month_map[$m] ?? null;
+            if ($idx === null) continue;
+            
+            $actualVal = $row['actual'] !== null ? (float)$row['actual'] : null;
+            $salesVal  = $row['sales']  !== null ? (float)$row['sales']  : null;
+            
+            $actual[$idx] = $actualVal;
+            $sales[$idx]  = $salesVal;
+            
+            if ($actualVal > 0 && $salesVal > 0) {
+                $pct[$idx] = round(($actualVal / $salesVal) * 100, 2);
             }
-            if (!$found) { $actual[] = null; $target[] = null; $sales[] = null; $pct[] = null; }
         }
-        $data[$section] = [
-            'actual' => $actual,
-            'target' => $target,
-            'sales'  => $sales,
-            'pct'    => $pct,        // persentase Cost Reject/Sales
-            'pct_target' => ($section === 'Conrod') ? 0.50 : 0.15,
+        
+        $data[$sec] = [
+            'pct'        => array_values($pct),
+            'pct_target' => $pct_target[$sec],
+            'actual'     => array_values($actual),
+            'sales'      => array_values($sales),
         ];
     }
     return $data;
 }
 
-$data      = buildFcostSection($rows,      $labels,      $sections);
-$data_prev = $prev_fy_info
-           ? buildFcostSection($rows_prev, $labels_prev, $sections)
-           : null;
-
-// Cek ada data prev tidak
-$has_prev = false;
-if ($data_prev) {
-    foreach ($sections as $s) {
-        $vals = array_filter($data_prev[$s]['actual'] ?? [], fn($v) => $v !== null);
-        if (count($vals)) { $has_prev = true; break; }
+try {
+    if ($year === 'all' || $year === '') {
+        $rows26 = getFcostRows($db, getFYRange('fy2026'));
+        $rows25 = getFcostRows($db, getFYRange('fy2025'));
+        
+        $data26 = remapFcostToMonths($rows26, $sections, $month_map, $pct_target);
+        $data25 = remapFcostToMonths($rows25, $sections, $month_map, $pct_target);
+        
+        echo json_encode([
+            'labels' => $month_labels,
+            'data' => $data26,
+            'data_prev' => $data25,
+            'compare' => true,
+            'cur_fy' => 'FY2026',
+            'prev_fy' => 'FY2025',
+        ]);
+    } else {
+        $fyRange = getFYRange($year);
+        $rows = getFcostRows($db, $fyRange);
+        $data = remapFcostToMonths($rows, $sections, $month_map, $pct_target);
+        $fyLabel = 'FY' . str_replace('fy', '', $year);
+        
+        echo json_encode(['labels' => $month_labels, 'data' => $data, 'compare' => false, 'cur_fy' => strtoupper($fyLabel)]);
     }
+} catch (Exception $e) {
+    http_response_code(500);
+    echo json_encode(['error' => $e->getMessage()]);
 }
-
-echo json_encode([
-    'labels'    => $labels,
-    'data'      => $data,
-    'data_prev' => $data_prev,
-    'compare'   => $has_prev,
-    'cur_fy'    => $cur_fy_label,
-    'prev_fy'   => $prev_fy_label,
-]);
 ?>

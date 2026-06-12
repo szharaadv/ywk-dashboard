@@ -303,15 +303,9 @@ $ppm_total = count(array_filter(
                     </div>
 
                     <!-- Summary Stats -->
-                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px;
+                    <div style="display:grid; grid-template-columns:1fr; gap:6px;
                                 padding-top:6px; border-top:1px solid #f0f0f0;
                                 margin-top:6px; flex-shrink:0;">
-                        <div style="background:#f4f5f7; border-radius:8px; padding:6px 10px;">
-                            <div style="font-size:9px; color:#6b7280; text-transform:uppercase;
-                                        letter-spacing:0.04em;">Total Materi</div>
-                            <div style="font-size:18px; font-weight:700; color:#1a1a1a;"
-                                id="event-total-materials">—</div>
-                        </div>
                         <div style="background:#f4f5f7; border-radius:8px; padding:6px 10px;">
                             <div style="font-size:9px; color:#6b7280; text-transform:uppercase;
                                         letter-spacing:0.04em;">Participants</div>
@@ -811,7 +805,6 @@ fetch('api/overview_event.php')
     .then(d => {
         const badge = document.getElementById('event-tahun-badge');
         if (badge && d.tahun) badge.textContent = d.tahun;
-        document.getElementById('event-total-materials').textContent    = d.total_materi       ?? '—';
         document.getElementById('event-total-participants').textContent = d.total_participants ?? '—';
 
         const grid = document.getElementById('event-cards-grid');

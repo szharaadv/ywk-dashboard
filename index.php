@@ -343,7 +343,11 @@ const SEC_LOC_ID = { MS1:'1', MS2:'2', Conrod:'3', HDE:'4' };
 const MONTHS_FY  = ['Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec','Jan','Feb','Mar'];
 function calMonthToFiscalIdx(m) { return (m - 4 + 12) % 12; }
 
-fetch('api/overview_summary.php' + QS)
+const API_BASE = window.location.pathname.includes('/ywk-dashboard/') 
+    ? '/ywk-dashboard/api/' 
+    : '/api/';
+
+fetch(API_BASE + 'overview_summary.php' + QS)
     .then(r => r.json())
     .then(d => {
         const or = d.operation_ratio, sf = d.safety, ql = d.quality, fc = d.fcost;
@@ -541,7 +545,7 @@ function loadYTD() {
     const key = activeKPI + '_' + YTD_YEAR;
     if (ytdCache[key]) { renderYTDChart(ytdCache[key]); return; }
     document.getElementById('ytd-home-subtitle').textContent = 'Loading...';
-    fetch(`api/kpi_ytd.php?kpi=${activeKPI}&year=${YTD_YEAR}`)
+    fetch(`${API_BASE}kpi_ytd.php?kpi=${activeKPI}&year=${YTD_YEAR}`)
         .then(r => r.json())
         .then(json => { ytdCache[key] = json; renderYTDChart(json); })
         .catch(() => {});
@@ -761,7 +765,7 @@ document.querySelectorAll('.ytd-sec-tab').forEach(btn => {
 updateSecTabs();
 loadYTD();
 
-fetch('api/overview_kaizen.php')
+fetch(API_BASE + 'overview_kaizen.php')
     .then(r => r.json())
     .then(d => {
         document.getElementById('kaizen-total').textContent     = d.total     ?? '—';
@@ -800,7 +804,7 @@ fetch('api/overview_kaizen.php')
             </tr>`).join('');
     }).catch(() => {});
 
-fetch('api/overview_event.php')
+fetch(API_BASE + 'overview_event.php')
     .then(r => r.json())
     .then(d => {
         const badge = document.getElementById('event-tahun-badge');
@@ -980,7 +984,7 @@ const REFRESH_INTERVAL = 10 * 60 * 1000; // 10 menit
 
 function refreshAllData() {
     // Refresh KPI Summary + Top Gaps
-    fetch('./api/overview_summary.php' + QS)
+    fetch(API_BASE + 'overview_summary.php' + QS)
         .then(r => r.json())
         .then(d => {
             const or = d.operation_ratio, sf = d.safety,
@@ -1059,7 +1063,7 @@ function refreshAllData() {
         }).catch(() => {});
 
     // Refresh Kaizen
-    fetch('api/overview_kaizen.php')
+    fetch(API_BASE + 'overview_kaizen.php')
         .then(r => r.json())
         .then(d => {
             document.getElementById('kaizen-total').textContent     = d.total     ?? '—';
@@ -1108,7 +1112,7 @@ function checkKPIAlert(gaps) {
 }
 
 // ===== KAIZEN ANALYTICS =====
-const KAIZEN_API = 'api/kaizen_proxy.php';
+const KAIZEN_API = API_BASE + 'kaizen_proxy.php';
 let awarenessChart = null;
 let categoryChart  = null;
 let kaizenBulanAktif = 8;
@@ -1274,7 +1278,7 @@ async function openKaizenDeptDetail(deptName) {
         const bulan   = kaizenBulanAktif;
 
         const r = await fetch(
-            `api/kaizen_detail_proxy.php?dept=${encodeURIComponent(deptName)}&bulan=${bulan}&tahun=${tahun}`
+            `${API_BASE}kaizen_detail_proxy.php?dept=...`
         );
         const d = await r.json();
 

@@ -240,16 +240,17 @@ $ppm_total = count(array_filter(
                                 <!-- Filter Bulan -->
                                 <div style="display:flex; gap:2px; flex-wrap:wrap;">
                                     <?php
-                                    $bulan_list = ['Jan'=>1,'Feb'=>2,'Mar'=>3,'Apr'=>4,'Mei'=>5,'Jun'=>6,
-                                                'Jul'=>7,'Agu'=>8,'Sep'=>9,'Okt'=>10,'Nov'=>11,'Des'=>12];
-                                    foreach ($bulan_list as $label => $num):
+                                    $cur_m = (int)date('n');
+                                    $bulan_fy = [4=>'Apr',5=>'May',6=>'Jun',7=>'Jul',8=>'Aug',9=>'Sep',
+                                                10=>'Oct',11=>'Nov',12=>'Dec',1=>'Jan',2=>'Feb',3=>'Mar'];
+                                    foreach ($bulan_fy as $num => $label):
                                     ?>
                                     <button onclick="setKaizenBulan(<?= $num ?>, this)"
-                                        class="kaizen-bulan-btn <?= $num == 8 ? 'active' : '' ?>"
+                                        class="kaizen-bulan-btn <?= $num == $cur_m ? 'active' : '' ?>"
                                         style="font-size:9px; padding:2px 6px; border-radius:4px; cursor:pointer;
-                                            border:1px solid <?= $num == 8 ? '#D0021B' : '#e5e7eb' ?>;
-                                            background:<?= $num == 8 ? '#D0021B' : '#fff' ?>;
-                                            color:<?= $num == 8 ? '#fff' : '#6b7280' ?>; font-weight:600;">
+                                            border:1px solid <?= $num == $cur_m ? '#D0021B' : '#e5e7eb' ?>;
+                                            background:<?= $num == $cur_m ? '#D0021B' : '#fff' ?>;
+                                            color:<?= $num == $cur_m ? '#fff' : '#6b7280' ?>; font-weight:600;">
                                         <?= $label ?>
                                     </button>
                                     <?php endforeach; ?>
@@ -1115,7 +1116,7 @@ function checkKPIAlert(gaps) {
 const KAIZEN_API = API_BASE + 'kaizen_proxy.php';
 let awarenessChart = null;
 let categoryChart  = null;
-let kaizenBulanAktif = 8;
+let kaizenBulanAktif = <?= (int)date('n') ?>;
 
 function setKaizenBulan(angka, el) {
     kaizenBulanAktif = angka;
@@ -1275,10 +1276,9 @@ async function openKaizenDeptDetail(deptName) {
     try {
         const tahunEl = document.getElementById('kaizen-filter-tahun');
         const tahun   = tahunEl ? parseInt(tahunEl.value) : new Date().getFullYear();
-        const bulan   = kaizenBulanAktif;
 
         const r = await fetch(
-            `${API_BASE}kaizen_detail_proxy.php?dept=...`
+            `${API_BASE}kaizen_detail_proxy.php?dept=${encodeURIComponent(deptName)}&bulan=${kaizenBulanAktif}&tahun=${tahun}`
         );
         const d = await r.json();
 

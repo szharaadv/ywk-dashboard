@@ -56,7 +56,7 @@ $year       = $_GET['year'] ?? 'all';
             <div class="kpi-glass-sub" id="kpi-ql-sub">Loading...</div>
         </div>
         <div class="kpi-glass">
-            <div class="kpi-glass-label">F-Cost</div>
+            <div class="kpi-glass-label">Ratio F-Cost</div>
             <div class="kpi-glass-value" id="kpi-fc-actual">—</div>
             <div class="kpi-glass-sub" id="kpi-fc-sub">Loading...</div>
         </div>

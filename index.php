@@ -364,7 +364,7 @@ fetch(API_BASE + 'overview_summary.php' + QS)
         if (sf && sf.total !== null) {
     if (sf.days_safe > 0 && sf.total === 0) {
         document.getElementById('kpi-sf-actual').innerHTML =
-            sf.days_safe + '<span style="font-size:13px;"> hari</span>';
+            sf.days_safe + '<span style="font-size:13px;"> day</span>';
         document.getElementById('kpi-sf-sub').innerHTML =
             `<span class="ok">✓ Zero accident</span> &nbsp;·&nbsp; <span style="font-size:9px;">${sf.periode ?? ''}</span>`;
     } else {

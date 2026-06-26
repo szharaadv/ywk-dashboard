@@ -144,6 +144,7 @@ $events = $db->query("
                 <tr>
                     <th>Foto</th>
                     <th>Tahun</th>
+                    <th>Jenis</th>
                     <th>Peringkat</th>
                     <th>Judul Materi</th>
                     <th>Peserta</th>
@@ -168,6 +169,13 @@ $events = $db->query("
                         <?php endif; ?>
                     </td>
                     <td><?= $ev['tahun'] ?></td>
+                    <td>
+                        <span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;
+                            background:<?= $ev['jenis_event']==='YGP'?'#E8F0FD':'#FDECEA' ?>;
+                            color:<?= $ev['jenis_event']==='YGP'?'#185FA5':'#D0021B' ?>;">
+                            <?= htmlspecialchars($ev['jenis_event'] ?? 'YWKS') ?>
+                        </span>
+                    </td>
                     <td><span class="rank-badge <?= $cls ?>"><?= $lbl ?></span></td>
                     <td><?= htmlspecialchars($ev['judul_materi'] ?? '—') ?></td>
                     <td><?= htmlspecialchars($ev['peserta']      ?? '—') ?></td>

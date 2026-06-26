@@ -292,28 +292,46 @@ $ppm_total = count(array_filter(
                         </div>
                     </div>
 
-                    <!-- Auto scroll container -->
-                    <div id="event-scroll-wrap"
-                        style="flex:1; min-height:0; overflow:hidden; position:relative; width:100%;">
-                        <div id="event-cards-grid"
-                            style="display:flex; flex-direction:column; gap:6px;
-                                    padding-right:2px;">
-                            <div style="text-align:center; color:#9ca3af;
-                                        padding:1rem; font-size:12px;">Loading...</div>
+                    <!-- 2 Section: YWKS + YJP -->
+                    <div style="flex:1; min-height:0; display:flex; flex-direction:column; gap:6px; overflow:hidden;">
+
+                        <!-- YWKS -->
+                        <div style="flex:1; min-height:0; display:flex; flex-direction:column;">
+                            <div id="label-ywks"
+                                style="font-size:10px;font-weight:800;color:#7B0000;
+                                        text-transform:uppercase;letter-spacing:.06em;
+                                        padding:4px 0;border-bottom:2px solid #D0021B;
+                                        margin-bottom:6px;flex-shrink:0;">YWKS</div>
+                            <div id="scroll-ywks"
+                                style="flex:1;min-height:0;overflow-y:auto;overflow-x:hidden;
+                                        display:flex;flex-direction:column;gap:6px;"></div>
                         </div>
+
+                        <!-- YJP Internal -->
+                        <div style="flex:1; min-height:0; display:flex; flex-direction:column;">
+                            <div id="label-yjp"
+                                style="font-size:10px;font-weight:800;color:#7B0000;
+                                        text-transform:uppercase;letter-spacing:.06em;
+                                        padding:4px 0;border-bottom:2px solid #D0021B;
+                                        margin-bottom:6px;flex-shrink:0;">YGP INTERNAL</div>
+                            <div id="scroll-yjp"
+                                style="flex:1;min-height:0;overflow-y:auto;overflow-x:hidden;
+                                        display:flex;flex-direction:column;gap:6px;"></div>
+                        </div>
+
                     </div>
 
-                    <!-- Summary Stats -->
-                    <div style="display:grid; grid-template-columns:1fr; gap:6px;
-                                padding-top:6px; border-top:1px solid #f0f0f0;
-                                margin-top:6px; flex-shrink:0;">
-                        <div style="background:#f4f5f7; border-radius:8px; padding:6px 10px;">
-                            <div style="font-size:9px; color:#6b7280; text-transform:uppercase;
+                    <!-- Participants -->
+                    <div style="padding-top:6px;border-top:1px solid #f0f0f0;
+                                margin-top:6px;flex-shrink:0;">
+                        <div style="background:#f4f5f7;border-radius:8px;padding:6px 10px;">
+                            <div style="font-size:9px;color:#6b7280;text-transform:uppercase;
                                         letter-spacing:0.04em;">Participants</div>
-                            <div style="font-size:18px; font-weight:700; color:#D0021B;"
+                            <div style="font-size:18px;font-weight:700;color:#D0021B;"
                                 id="event-total-participants">—</div>
                         </div>
                     </div>
+
                 </div>
             </div>
             <!-- END KOLOM 3 -->
@@ -812,223 +830,100 @@ fetch(API_BASE + 'overview_event.php')
         if (badge && d.tahun) badge.textContent = d.tahun;
         document.getElementById('event-total-participants').textContent = d.total_participants ?? '—';
 
-        const grid = document.getElementById('event-cards-grid');
-        if (!d.photos || d.photos.length === 0) {
-            grid.innerHTML = `<div style="text-align:center;color:#9ca3af;
-                padding:1rem;font-size:12px;">Belum ada data event</div>`;
-            return;
-        }
-
         function rankBadge(rank) {
             const r = parseInt(rank);
             if (isNaN(r) || r <= 0) return { label:'', bg:'#f4f5f7', color:'#6b7280', border:'#e5e7eb' };
-
-            // Suffix otomatis: 1st, 2nd, 3rd, 4th, 5th, dst
             const suffix = (n) => {
-                if (n % 100 >= 11 && n % 100 <= 13) return n + 'th';
-                switch (n % 10) {
-                    case 1: return n + 'st';
-                    case 2: return n + 'nd';
-                    case 3: return n + 'rd';
-                    default: return n + 'th';
-                }
+                if (n % 100 >= 11 && n % 100 <= 13) return n+'th';
+                switch(n%10){case 1:return n+'st';case 2:return n+'nd';case 3:return n+'rd';default:return n+'th';}
             };
-
-            const medal = r===1 ? '🥇 ' : r===2 ? '🥈 ' : r===3 ? '🥉 ' : '';
-
-            // Warna per rank
+            const medal  = r===1?'🥇 ':r===2?'🥈 ':r===3?'🥉 ':'';
             const colors = {
-                1: { bg:'#D0021B', color:'#fff', border:'#D0021B' },
-                2: { bg:'#374151', color:'#fff', border:'#374151' },
-                3: { bg:'#3B6D11', color:'#fff', border:'#3B6D11' },
+                1:{bg:'#D0021B',color:'#fff',border:'#D0021B'},
+                2:{bg:'#374151',color:'#fff',border:'#374151'},
+                3:{bg:'#3B6D11',color:'#fff',border:'#3B6D11'},
             };
-            const c = colors[r] ?? { bg:'#185FA5', color:'#fff', border:'#185FA5' };
-
-            return { label: `${medal}${suffix(r)} Winner`, ...c };
+            const c = colors[r] ?? {bg:'#185FA5',color:'#fff',border:'#185FA5'};
+            return { label:`${medal}${suffix(r)} Winner`, ...c };
         }
 
-        function renderEventSection(jenis, photos, label) {
-            if (!photos || !photos.length) return '';
-
-            const cards = photos.map(ev => {
-                const r   = parseInt(ev.peringkat);
-                const suffix = (n) => {
-                    if (n % 100 >= 11 && n % 100 <= 13) return n+'th';
-                    switch(n%10){case 1:return n+'st';case 2:return n+'nd';case 3:return n+'rd';default:return n+'th';}
-                };
-                const medal  = r===1?'🥇 ':r===2?'🥈 ':r===3?'🥉 ':'';
-                const colors = {
-                    1:{bg:'#D0021B',color:'#fff'},
-                    2:{bg:'#374151',color:'#fff'},
-                    3:{bg:'#3B6D11',color:'#fff'},
-                };
-                const c = colors[r] ?? {bg:'#185FA5',color:'#fff'};
-                const badgeHtml = !isNaN(r) && r > 0
-                    ? `<span style="position:absolute;top:6px;right:6px;
-                        font-size:9px;font-weight:700;padding:2px 8px;
-                        border-radius:20px;background:${c.bg};color:${c.color};
-                        box-shadow:0 1px 4px rgba(0,0,0,0.25);white-space:nowrap;">
-                        ${medal}${suffix(r)} Winner</span>`
-                    : '';
-
+        function buildEventCards(photos) {
+            if (!photos || !photos.length)
+                return '<div style="text-align:center;color:#9ca3af;padding:1rem;font-size:12px;">Belum ada data</div>';
+            return photos.map(ev => {
+                const rb = rankBadge(ev.peringkat);
+                const badgeHtml = rb.label
+                    ? `<span style="position:absolute;top:8px;right:8px;
+                        font-size:10px;font-weight:700;padding:3px 10px;
+                        border-radius:20px;background:${rb.bg};color:${rb.color};
+                        box-shadow:0 1px 4px rgba(0,0,0,0.2);white-space:nowrap;">
+                        ${rb.label}</span>` : '';
                 const imgHtml = ev.foto
                     ? `<img src="assets/img/${ev.foto}"
-                            style="width:100%;height:110px;object-fit:cover;
-                                border-radius:8px 8px 0 0;display:block;"
+                            style="width:100%;height:120px;object-fit:cover;
+                                   border-radius:8px 8px 0 0;display:block;"
                             onerror="this.style.display='none'">`
-                    : `<div style="width:100%;height:110px;background:#f4f5f7;
-                                border-radius:8px 8px 0 0;display:flex;
-                                align-items:center;justify-content:center;
-                                font-size:24px;">📷</div>`;
-
-                return `<div style="flex-shrink:0;width:160px;border:1.5px solid #e5e7eb;
-                                    border-radius:10px;overflow:hidden;background:#fff;">
-                    <div style="position:relative;">${imgHtml}${badgeHtml}</div>
-                    <div style="padding:6px 8px;">
-                        <div style="font-size:11px;font-weight:700;color:#1a1a1a;
-                                    line-height:1.3;margin-bottom:2px;
-                                    display:-webkit-box;-webkit-line-clamp:2;
-                                    -webkit-box-orient:vertical;overflow:hidden;">
-                            ${ev.judul_materi ?? '—'}
+                    : `<div style="width:100%;height:120px;background:#f4f5f7;
+                                   border-radius:8px 8px 0 0;display:flex;
+                                   align-items:center;justify-content:center;
+                                   font-size:28px;">📷</div>`;
+                return `
+                    <div style="border:2px solid ${rb.border};border-radius:10px;
+                                background:#fff;overflow:hidden;flex-shrink:0;">
+                        <div style="position:relative;">${imgHtml}${badgeHtml}</div>
+                        <div style="padding:8px 10px;">
+                            <div style="font-size:12px;font-weight:700;color:#1a1a1a;
+                                        line-height:1.3;margin-bottom:3px;">
+                                ${ev.judul_materi ?? '—'}
+                            </div>
+                            <div style="font-size:10px;color:#6b7280;">${ev.peserta ?? '—'}</div>
+                            ${ev.departemen
+                                ? `<div style="font-size:10px;color:#D0021B;
+                                               font-weight:600;margin-top:2px;">
+                                       ${ev.departemen}</div>` : ''}
                         </div>
-                        <div style="font-size:9px;color:#6b7280;">${ev.peserta ?? '—'}</div>
-                        ${ev.departemen
-                            ? `<div style="font-size:9px;color:#D0021B;font-weight:600;margin-top:1px;">
-                                ${ev.departemen}</div>`
-                            : ''}
-                    </div>
-                </div>`;
+                    </div>`;
             }).join('');
-
-            return `
-                <div style="font-size:10px;font-weight:800;color:#7B0000;
-                            text-transform:uppercase;letter-spacing:.06em;
-                            padding:4px 0;border-bottom:2px solid #D0021B;
-                            margin-bottom:8px;flex-shrink:0;">${label}</div>
-                <div class="event-hscroll-wrap" id="hscroll-${jenis}"
-                    style="overflow-x:hidden;overflow-y:hidden;
-                            display:flex;gap:8px;padding-bottom:4px;
-                            flex-shrink:0;margin-bottom:12px;
-                            width:100%;">
-                    ${cards}
-                </div>`;
         }
 
-        let html = '';
-        if (d.photos_ywks && d.photos_ywks.length)
-            html += renderEventSection('YWKS', d.photos_ywks, 'YWKS');
-        if (d.photos_yjp && d.photos_yjp.length)
-            html += renderEventSection('YJP', d.photos_yjp, 'YGP Internal');
-        if (!html)
-            html = `<div style="text-align:center;color:#9ca3af;
-                        padding:1rem;font-size:12px;">Belum ada data event</div>`;
-
-        grid.innerHTML = html;
-
-        // Auto scroll horizontal per section
-        ['YWKS','YJP'].forEach(jenis => {
-            const wrap = document.getElementById(`hscroll-${jenis}`);
+        function startVScroll(wrap) {
             if (!wrap) return;
-
-            let pos       = 0;
-            let dir       = 1;
-            let paused    = false;
-
+            let pos = 0, dir = 1, paused = false;
             wrap.addEventListener('mouseenter', () => paused = true);
             wrap.addEventListener('mouseleave', () => paused = false);
-
             setInterval(() => {
                 if (paused) return;
-                const maxScroll = wrap.scrollWidth - wrap.clientWidth;
-                if (maxScroll <= 0) return;
-
-                pos += dir * 0.8;
-
-                if (pos >= maxScroll) {
-                    dir = -1;
-                    paused = true;
-                    setTimeout(() => paused = false, 1500);
-                } else if (pos <= 0) {
-                    dir = 1;
-                    paused = true;
-                    setTimeout(() => paused = false, 1500);
-                }
-
-                pos = Math.max(0, Math.min(maxScroll, pos));
-                wrap.scrollLeft = pos;
+                const max = wrap.scrollHeight - wrap.clientHeight;
+                if (max <= 0) return;
+                pos += dir * 0.6;
+                if (pos >= max) { dir=-1; paused=true; setTimeout(()=>paused=false,1500); }
+                if (pos <= 0)   { dir= 1; paused=true; setTimeout(()=>paused=false,1500); }
+                pos = Math.max(0, Math.min(max, pos));
+                wrap.scrollTop = pos;
             }, 16);
-        });
-
-        // Auto slideshow setiap 4 detik
-        setInterval(() => {
-            if (slideshowData.YWKS.length > 1) slideGo('YWKS', 1);
-        }, 4000);
-        setInterval(() => {
-            if (slideshowData.YJP.length > 1) slideGo('YJP', 1);
-        }, 4000);
-
-        grid.innerHTML = cards;
-
-        // ===== AUTO SCROLL =====
-        const wrap = document.getElementById('event-scroll-wrap');
-        let scrollPos  = 0;
-        let scrollDir  = 1;
-        let scrollPaused = false;
-
-        // Pause saat hover
-        wrap.addEventListener('mouseenter', () => scrollPaused = true);
-        wrap.addEventListener('mouseleave', () => scrollPaused = false);
-
-        // Tunggu semua gambar load dulu baru mulai scroll
-const allImgs = grid.querySelectorAll('img');
-let loadedCount = 0;
-const totalImgs = allImgs.length;
-
-function startAutoScroll() {
-    let scrollPos = 0;
-    let scrollDir = 1;
-    let pauseTimer = null;
-
-    function autoScroll() {
-        if (scrollPaused) return;
-
-        const maxScroll = grid.scrollHeight - wrap.clientHeight;
-        if (maxScroll <= 0) return;
-
-        scrollPos += scrollDir * 0.6; // kecepatan scroll
-
-        if (scrollPos >= maxScroll) {
-            scrollDir = -1;
-            // Pause 1.5 detik di bawah sebelum balik
-            scrollPaused = true;
-            setTimeout(() => { scrollPaused = false; }, 1500);
-        } else if (scrollPos <= 0) {
-            scrollDir = 1;
-            // Pause 1.5 detik di atas sebelum turun lagi
-            scrollPaused = true;
-            setTimeout(() => { scrollPaused = false; }, 1500);
         }
 
-        scrollPos = Math.max(0, Math.min(maxScroll, scrollPos));
-        wrap.scrollTop = scrollPos;
-    }
+        const wrapYwks  = document.getElementById('scroll-ywks');
+        const labelYwks = document.getElementById('label-ywks');
+        const wrapYjp   = document.getElementById('scroll-yjp');
+        const labelYjp  = document.getElementById('label-yjp');
 
-    setInterval(autoScroll, 16);
-}
-
-if (totalImgs === 0) {
-    startAutoScroll();
-} else {
-    allImgs.forEach(img => {
-        if (img.complete) {
-            loadedCount++;
-            if (loadedCount === totalImgs) startAutoScroll();
+        if (d.photos_ywks && d.photos_ywks.length) {
+            wrapYwks.innerHTML = buildEventCards(d.photos_ywks);
+            startVScroll(wrapYwks);
         } else {
-            img.addEventListener('load',  () => { loadedCount++; if (loadedCount === totalImgs) startAutoScroll(); });
-            img.addEventListener('error', () => { loadedCount++; if (loadedCount === totalImgs) startAutoScroll(); });
+            if (labelYwks) labelYwks.style.display = 'none';
+            if (wrapYwks)  wrapYwks.style.display  = 'none';
         }
-    });
-}
+
+        if (d.photos_yjp && d.photos_yjp.length) {
+            wrapYjp.innerHTML = buildEventCards(d.photos_yjp);
+            startVScroll(wrapYjp);
+        } else {
+            if (labelYjp) labelYjp.style.display = 'none';
+            if (wrapYjp)  wrapYjp.style.display  = 'none';
+        }
+
     }).catch(() => {});
 
 const PPM_TOTAL = <?= $ppm_total ?>;

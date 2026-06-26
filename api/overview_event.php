@@ -77,13 +77,24 @@ $stmtYjp = $db->prepare("
 $stmtYjp->execute([':tahun' => $last_tahun]);
 $photos_yjp = $stmtYjp->fetchAll();
 
+// Ambil participants per section dari config
+$stmtCfg = $db->prepare("
+    SELECT jenis_event, participants
+    FROM ywk_event_config
+    WHERE tahun = :tahun
+");
+$stmtCfg->execute([':tahun' => $last_tahun]);
+$configs = $stmtCfg->fetchAll(PDO::FETCH_KEY_PAIR);
+
 echo json_encode([
     'tahun'              => $last_tahun,
-    'total_materi'       => (int) ($summary['total_materi']         ?? 0),
+    'total_materi'       => (int) ($summary['total_materi'] ?? 0),
     'total_participants' => (int) ($participants['total_participants'] ?? 0),
     'winner'             => $winner ?? null,
-    'photos'             => array_merge($photos_ywks, $photos_yjp), // backward compat
+    'photos'             => array_merge($photos_ywks, $photos_yjp),
     'photos_ywks'        => $photos_ywks,
     'photos_yjp'         => $photos_yjp,
+    'participants_ywks'  => (int) ($configs['YWKS'] ?? 0),
+    'participants_yjp'   => (int) ($configs['YJP']  ?? 0),
 ]);
 ?>

@@ -278,63 +278,63 @@ $ppm_total = count(array_filter(
             <!-- END KOLOM 2 -->
 
             <!-- KOLOM 3: YWK Event -->
-            <div class="home-col-event">
-                <div class="card" style="flex:1; min-height:0; overflow:hidden;
-                            display:flex; flex-direction:column;">
-                    <div class="card-header" style="flex-shrink:0;">
-                        <div class="card-title">YWK Event</div>
-                        <div style="display:flex; align-items:center; gap:6px;">
-                            <span id="event-tahun-badge"
-                                style="font-size:10px; padding:2px 8px; border-radius:20px;
-                                        background:#FDECEA; color:#D0021B; font-weight:600;">
-                            </span>
-                            <a href="pages/event_detail.php" class="detail-link">Detail →</a>
+                        <div class="home-col-event">
+                            <div class="card" style="flex:1; min-height:0; overflow:hidden;
+                                        display:flex; flex-direction:column;">
+                                <div class="card-header" style="flex-shrink:0;">
+                                    <div class="card-title">YWK Event</div>
+                                    <div style="display:flex; align-items:center; gap:6px;">
+                                        <span id="event-tahun-badge"
+                                            style="font-size:10px; padding:2px 8px; border-radius:20px;
+                                                    background:#FDECEA; color:#D0021B; font-weight:600;"></span>
+                                        <a href="pages/event_detail.php" class="detail-link">Detail →</a>
+                                    </div>
+                                </div>
+
+                                <div style="flex:1; min-height:0; display:flex; flex-direction:column; gap:6px; overflow:hidden;">
+
+                                    <!-- YWKS -->
+                                    <div style="flex:1; min-height:0; display:flex; flex-direction:column;">
+                                        <div id="label-ywks"
+                                            style="font-size:10px;font-weight:800;color:#7B0000;
+                                                    text-transform:uppercase;letter-spacing:.06em;
+                                                    padding:4px 0;border-bottom:2px solid #D0021B;
+                                                    margin-bottom:6px;flex-shrink:0;">YWKS</div>
+                                        <div id="scroll-ywks"
+                                            style="flex:1;min-height:0;overflow:hidden;display:flex;flex-direction:column;"></div>
+                                        <div style="padding-top:6px;border-top:1px solid #f0f0f0;margin-top:6px;flex-shrink:0;">
+                                            <div style="background:#f4f5f7;border-radius:8px;padding:6px 10px;">
+                                                <div style="font-size:9px;color:#6b7280;text-transform:uppercase;letter-spacing:0.04em;">Participants</div>
+                                                <div style="font-size:18px;font-weight:700;color:#D0021B;" id="ywks-participants">—</div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- YGP Internal -->
+                                    <div style="flex:1; min-height:0; display:flex; flex-direction:column;">
+                                        <div id="label-yjp"
+                                            style="font-size:10px;font-weight:800;color:#7B0000;
+                                                    text-transform:uppercase;letter-spacing:.06em;
+                                                    padding:4px 0;border-bottom:2px solid #D0021B;
+                                                    margin-bottom:6px;flex-shrink:0;">YGP INTERNAL</div>
+                                        <div id="scroll-yjp"
+                                              style="flex:1;min-height:0;overflow-x:auto;overflow-y:hidden;
+                                                    display:flex;flex-direction:row;gap:8px;align-items:flex-start;"></div>
+                                        <div style="padding-top:6px;border-top:1px solid #f0f0f0;
+                                                    margin-top:6px;flex-shrink:0;">
+                                            <div style="background:#f4f5f7;border-radius:8px;padding:6px 10px;">
+                                                <div style="font-size:9px;color:#6b7280;text-transform:uppercase;
+                                                            letter-spacing:0.04em;">Participants</div>
+                                                <div style="font-size:18px;font-weight:700;color:#D0021B;"
+                                                    id="event-total-participants">—</div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                </div>
+                            </div>
                         </div>
-                    </div>
-
-                    <!-- 2 Section: YWKS + YJP -->
-                    <div style="flex:1; min-height:0; display:flex; flex-direction:column; gap:6px; overflow:hidden;">
-
-                        <!-- YWKS -->
-                        <div style="flex:1; min-height:0; display:flex; flex-direction:column;">
-                            <div id="label-ywks"
-                                style="font-size:10px;font-weight:800;color:#7B0000;
-                                        text-transform:uppercase;letter-spacing:.06em;
-                                        padding:4px 0;border-bottom:2px solid #D0021B;
-                                        margin-bottom:6px;flex-shrink:0;">YWKS</div>
-                            <div id="scroll-ywks"
-                                style="flex:1;min-height:0;overflow-y:auto;overflow-x:hidden;
-                                        display:flex;flex-direction:column;gap:6px;"></div>
-                        </div>
-
-                        <!-- YJP Internal -->
-                        <div style="flex:1; min-height:0; display:flex; flex-direction:column;">
-                            <div id="label-yjp"
-                                style="font-size:10px;font-weight:800;color:#7B0000;
-                                        text-transform:uppercase;letter-spacing:.06em;
-                                        padding:4px 0;border-bottom:2px solid #D0021B;
-                                        margin-bottom:6px;flex-shrink:0;">YGP INTERNAL</div>
-                            <div id="scroll-yjp"
-                                style="flex:1;min-height:0;overflow-y:auto;overflow-x:hidden;
-                                        display:flex;flex-direction:column;gap:6px;"></div>
-                        </div>
-
-                    </div>
-
-                    <!-- Participants -->
-                    <div style="padding-top:6px;border-top:1px solid #f0f0f0;
-                                margin-top:6px;flex-shrink:0;">
-                        <div style="background:#f4f5f7;border-radius:8px;padding:6px 10px;">
-                            <div style="font-size:9px;color:#6b7280;text-transform:uppercase;
-                                        letter-spacing:0.04em;">Participants</div>
-                            <div style="font-size:18px;font-weight:700;color:#D0021B;"
-                                id="event-total-participants">—</div>
-                        </div>
-                    </div>
-
-                </div>
-            </div>
-            <!-- END KOLOM 3 -->
+                        <!-- END KOLOM 3 -->
 
         </div>
         <!-- END HOME GRID -->
@@ -847,60 +847,53 @@ fetch(API_BASE + 'overview_event.php')
             return { label:`${medal}${suffix(r)} Winner`, ...c };
         }
 
-        function buildEventCards(photos) {
-            if (!photos || !photos.length)
-                return '<div style="text-align:center;color:#9ca3af;padding:1rem;font-size:12px;">Belum ada data</div>';
-            return photos.map(ev => {
-                const rb = rankBadge(ev.peringkat);
-                const badgeHtml = rb.label
-                    ? `<span style="position:absolute;top:8px;right:8px;
-                        font-size:10px;font-weight:700;padding:3px 10px;
-                        border-radius:20px;background:${rb.bg};color:${rb.color};
+        function buildSlideshow(containerId, photos) {
+            const wrap = document.getElementById(containerId);
+            if (!wrap || !photos || !photos.length) return;
+
+            let idx = 0;
+
+            function render() {
+                const ev = photos[idx];
+                const r  = parseInt(ev.peringkat);
+                const suffix = n => {
+                    if (n%100>=11&&n%100<=13) return n+'th';
+                    switch(n%10){case 1:return n+'st';case 2:return n+'nd';case 3:return n+'rd';default:return n+'th';}
+                };
+                const medal  = r===1?'🥇 ':r===2?'🥈 ':r===3?'🥉 ':'';
+                const colors = {1:{bg:'#D0021B',color:'#fff',border:'#D0021B'},2:{bg:'#374151',color:'#fff',border:'#374151'},3:{bg:'#3B6D11',color:'#fff',border:'#3B6D11'}};
+                const c = colors[r] ?? {bg:'#185FA5',color:'#fff',border:'#185FA5'};
+                const badgeHtml = !isNaN(r)&&r>0
+                    ? `<span style="position:absolute;top:8px;right:8px;font-size:10px;font-weight:700;
+                        padding:3px 10px;border-radius:20px;background:${c.bg};color:${c.color};
                         box-shadow:0 1px 4px rgba(0,0,0,0.2);white-space:nowrap;">
-                        ${rb.label}</span>` : '';
+                        ${medal}${suffix(r)} Winner</span>` : '';
                 const imgHtml = ev.foto
-                    ? `<img src="assets/img/${ev.foto}"
-                            style="width:100%;height:120px;object-fit:cover;
-                                   border-radius:8px 8px 0 0;display:block;"
-                            onerror="this.style.display='none'">`
-                    : `<div style="width:100%;height:120px;background:#f4f5f7;
-                                   border-radius:8px 8px 0 0;display:flex;
-                                   align-items:center;justify-content:center;
-                                   font-size:28px;">📷</div>`;
-                return `
-                    <div style="border:2px solid ${rb.border};border-radius:10px;
-                                background:#fff;overflow:hidden;flex-shrink:0;">
+                    ? `<img src="assets/img/${ev.foto}" style="width:100%;height:130px;object-fit:cover;border-radius:8px 8px 0 0;display:block;" onerror="this.style.display='none'">`
+                    : `<div style="width:100%;height:130px;background:#f4f5f7;border-radius:8px 8px 0 0;display:flex;align-items:center;justify-content:center;font-size:28px;">📷</div>`;
+
+                wrap.innerHTML = `
+                    <div style="border:2px solid ${c.border};border-radius:10px;background:#fff;overflow:hidden;flex-shrink:0;width:100%;">
                         <div style="position:relative;">${imgHtml}${badgeHtml}</div>
                         <div style="padding:8px 10px;">
-                            <div style="font-size:12px;font-weight:700;color:#1a1a1a;
-                                        line-height:1.3;margin-bottom:3px;">
-                                ${ev.judul_materi ?? '—'}
-                            </div>
-                            <div style="font-size:10px;color:#6b7280;">${ev.peserta ?? '—'}</div>
-                            ${ev.departemen
-                                ? `<div style="font-size:10px;color:#D0021B;
-                                               font-weight:600;margin-top:2px;">
-                                       ${ev.departemen}</div>` : ''}
+                            <div style="font-size:12px;font-weight:700;color:#1a1a1a;line-height:1.3;margin-bottom:3px;">${ev.judul_materi??'—'}</div>
+                            <div style="font-size:10px;color:#6b7280;">${ev.peserta??'—'}</div>
+                            ${ev.departemen?`<div style="font-size:10px;color:#D0021B;font-weight:600;margin-top:2px;">${ev.departemen}</div>`:''}
+                        </div>
+                        <!-- Progress dots -->
+                        <div style="display:flex;align-items:center;gap:4px;padding:4px 10px 8px;justify-content:center;">
+                            ${photos.map((_,i)=>`<div style="width:${i===idx?'16px':'6px'};height:6px;border-radius:3px;background:${i===idx?'#D0021B':'#e5e7eb'};transition:all .3s;"></div>`).join('')}
                         </div>
                     </div>`;
-            }).join('');
-        }
+            }
 
-        function startVScroll(wrap) {
-            if (!wrap) return;
-            let pos = 0, dir = 1, paused = false;
-            wrap.addEventListener('mouseenter', () => paused = true);
-            wrap.addEventListener('mouseleave', () => paused = false);
+            render();
+
+            // Auto slideshow tiap 3 detik
             setInterval(() => {
-                if (paused) return;
-                const max = wrap.scrollHeight - wrap.clientHeight;
-                if (max <= 0) return;
-                pos += dir * 0.6;
-                if (pos >= max) { dir=-1; paused=true; setTimeout(()=>paused=false,1500); }
-                if (pos <= 0)   { dir= 1; paused=true; setTimeout(()=>paused=false,1500); }
-                pos = Math.max(0, Math.min(max, pos));
-                wrap.scrollTop = pos;
-            }, 16);
+                idx = (idx + 1) % photos.length;
+                render();
+            }, 3000);
         }
 
         const wrapYwks  = document.getElementById('scroll-ywks');
@@ -909,20 +902,24 @@ fetch(API_BASE + 'overview_event.php')
         const labelYjp  = document.getElementById('label-yjp');
 
         if (d.photos_ywks && d.photos_ywks.length) {
-            wrapYwks.innerHTML = buildEventCards(d.photos_ywks);
-            startVScroll(wrapYwks);
+            buildSlideshow('scroll-ywks', d.photos_ywks);
         } else {
             if (labelYwks) labelYwks.style.display = 'none';
             if (wrapYwks)  wrapYwks.style.display  = 'none';
         }
 
         if (d.photos_yjp && d.photos_yjp.length) {
-            wrapYjp.innerHTML = buildEventCards(d.photos_yjp);
-            startVScroll(wrapYjp);
+            buildSlideshow('scroll-yjp', d.photos_yjp);
         } else {
             if (labelYjp) labelYjp.style.display = 'none';
             if (wrapYjp)  wrapYjp.style.display  = 'none';
         }
+
+        // Participants per section
+        const elYwks = document.getElementById('ywks-participants');
+        const elYjp  = document.getElementById('event-total-participants');
+        if (elYwks) elYwks.textContent = d.participants_ywks ?? '—';
+        if (elYjp)  elYjp.textContent  = d.participants_yjp  ?? '—';
 
     }).catch(() => {});
 

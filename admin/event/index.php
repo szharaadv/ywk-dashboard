@@ -115,7 +115,10 @@ $events = $db->query("
         <a href="../index.php" class="back-btn">← Back</a>
         <div class="topbar-title">YWK Event Management</div>
     </div>
-    <a href="create.php" class="btn-add">+ Tambah Event</a>
+    <div style="display:flex;gap:8px;">
+        <a href="config.php" style="background:#185FA5;color:#fff;border:none;border-radius:8px;padding:7px 14px;font-size:12px;font-weight:600;text-decoration:none;">⚙ Participants</a>
+        <a href="create.php" class="btn-add">+ Tambah Event</a>
+    </div>
 </div>
 
 <div class="content">

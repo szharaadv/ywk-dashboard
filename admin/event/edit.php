@@ -152,7 +152,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <label class="form-label">Event Type <span class="required">*</span></label>
                     <select name="jenis_event" class="form-control" required>
                         <option value="YWKS" <?= $ev['jenis_event']==='YWKS'?'selected':'' ?>>YWKS</option>
-                        <option value="YJP"  <?= $ev['jenis_event']==='YJP' ?'selected':'' ?>>YJP Internal</option>
+                        <option value="YGP"  <?= $ev['jenis_event']==='YGP' ?'selected':'' ?>>YGP Internal</option>
                     </select>
                 </div>
             </div>

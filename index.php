@@ -294,7 +294,7 @@ $ppm_total = count(array_filter(
 
                     <!-- Auto scroll container -->
                     <div id="event-scroll-wrap"
-                        style="flex:1; min-height:0; overflow:hidden; position:relative;">
+                        style="flex:1; min-height:0; overflow:hidden; position:relative; width:100%;">
                         <div id="event-cards-grid"
                             style="display:flex; flex-direction:column; gap:6px;
                                     padding-right:2px;">
@@ -847,116 +847,118 @@ fetch(API_BASE + 'overview_event.php')
             return { label: `${medal}${suffix(r)} Winner`, ...c };
         }
 
-        // ── State slideshow per section
-        const slideshowState = { YWKS: 0, YJP: 0 };
-        const slideshowData  = { YWKS: [], YJP: [] };
+        function renderEventSection(jenis, photos, label) {
+            if (!photos || !photos.length) return '';
 
-        function renderSlideshow(jenis) {
-            const photos = slideshowData[jenis];
-            if (!photos || !photos.length) return;
+            const cards = photos.map(ev => {
+                const r   = parseInt(ev.peringkat);
+                const suffix = (n) => {
+                    if (n % 100 >= 11 && n % 100 <= 13) return n+'th';
+                    switch(n%10){case 1:return n+'st';case 2:return n+'nd';case 3:return n+'rd';default:return n+'th';}
+                };
+                const medal  = r===1?'🥇 ':r===2?'🥈 ':r===3?'🥉 ':'';
+                const colors = {
+                    1:{bg:'#D0021B',color:'#fff'},
+                    2:{bg:'#374151',color:'#fff'},
+                    3:{bg:'#3B6D11',color:'#fff'},
+                };
+                const c = colors[r] ?? {bg:'#185FA5',color:'#fff'};
+                const badgeHtml = !isNaN(r) && r > 0
+                    ? `<span style="position:absolute;top:6px;right:6px;
+                        font-size:9px;font-weight:700;padding:2px 8px;
+                        border-radius:20px;background:${c.bg};color:${c.color};
+                        box-shadow:0 1px 4px rgba(0,0,0,0.25);white-space:nowrap;">
+                        ${medal}${suffix(r)} Winner</span>`
+                    : '';
 
-            const idx = slideshowState[jenis];
-            const ev  = photos[idx];
-            const rb  = rankBadge(ev.peringkat);
+                const imgHtml = ev.foto
+                    ? `<img src="assets/img/${ev.foto}"
+                            style="width:100%;height:110px;object-fit:cover;
+                                border-radius:8px 8px 0 0;display:block;"
+                            onerror="this.style.display='none'">`
+                    : `<div style="width:100%;height:110px;background:#f4f5f7;
+                                border-radius:8px 8px 0 0;display:flex;
+                                align-items:center;justify-content:center;
+                                font-size:24px;">📷</div>`;
 
-            const imgHtml = ev.foto
-                ? `<img src="assets/img/${ev.foto}"
-                        style="width:100%; height:140px; object-fit:cover;
-                            border-radius:8px 8px 0 0; display:block;"
-                        onerror="this.style.display='none'">`
-                : `<div style="width:100%;height:140px;background:#f4f5f7;
-                            border-radius:8px 8px 0 0;display:flex;
-                            align-items:center;justify-content:center;
-                            font-size:28px;">📷</div>`;
-
-            document.getElementById(`slide-card-${jenis}`).innerHTML = `
-                <div style="position:relative;">
-                    ${imgHtml}
-                    ${rb.label ? `<span style="position:absolute;top:8px;right:8px;
-                        font-size:10px;font-weight:700;padding:3px 10px;
-                        border-radius:20px;background:${rb.bg};color:${rb.color};
-                        box-shadow:0 1px 4px rgba(0,0,0,0.2);">${rb.label}</span>` : ''}
-                </div>
-                <div style="padding:8px 10px;">
-                    <div style="font-size:12px;font-weight:700;color:#1a1a1a;
-                                line-height:1.3;margin-bottom:3px;">
-                        ${ev.judul_materi ?? '—'}
+                return `<div style="flex-shrink:0;width:160px;border:1.5px solid #e5e7eb;
+                                    border-radius:10px;overflow:hidden;background:#fff;">
+                    <div style="position:relative;">${imgHtml}${badgeHtml}</div>
+                    <div style="padding:6px 8px;">
+                        <div style="font-size:11px;font-weight:700;color:#1a1a1a;
+                                    line-height:1.3;margin-bottom:2px;
+                                    display:-webkit-box;-webkit-line-clamp:2;
+                                    -webkit-box-orient:vertical;overflow:hidden;">
+                            ${ev.judul_materi ?? '—'}
+                        </div>
+                        <div style="font-size:9px;color:#6b7280;">${ev.peserta ?? '—'}</div>
+                        ${ev.departemen
+                            ? `<div style="font-size:9px;color:#D0021B;font-weight:600;margin-top:1px;">
+                                ${ev.departemen}</div>`
+                            : ''}
                     </div>
-                    <div style="font-size:10px;color:#6b7280;">${ev.peserta ?? '—'}</div>
-                    ${ev.departemen
-                        ? `<div style="font-size:10px;color:#D0021B;margin-top:2px;
-                                    font-weight:600;">${ev.departemen}</div>`
-                        : ''}
-                </div>
-                <!-- Nav -->
-                <div style="display:flex;align-items:center;gap:6px;
-                            padding:4px 10px 8px;border-top:1px solid #f0f0f0;">
-                    <button onclick="slideGo('${jenis}',-1)"
-                        style="background:#fff;border:1px solid #e5e7eb;border-radius:6px;
-                            padding:2px 8px;cursor:pointer;font-size:14px;color:#6b7280;">
-                        ‹
-                    </button>
-                    <div style="flex:1;height:3px;background:#e5e7eb;border-radius:2px;">
-                        <div style="height:100%;background:#D0021B;border-radius:2px;
-                                    width:${((idx+1)/photos.length*100).toFixed(0)}%;
-                                    transition:width 0.3s ease;"></div>
-                    </div>
-                    <span style="font-size:10px;color:#9ca3af;white-space:nowrap;">
-                        ${idx+1} / ${photos.length}
-                    </span>
-                    <button onclick="slideGo('${jenis}',1)"
-                        style="background:#fff;border:1px solid #e5e7eb;border-radius:6px;
-                            padding:2px 8px;cursor:pointer;font-size:14px;color:#6b7280;">
-                        ›
-                    </button>
-                </div>
-            `;
+                </div>`;
+            }).join('');
+
+            return `
+                <div style="font-size:10px;font-weight:800;color:#7B0000;
+                            text-transform:uppercase;letter-spacing:.06em;
+                            padding:4px 0;border-bottom:2px solid #D0021B;
+                            margin-bottom:8px;flex-shrink:0;">${label}</div>
+                <div class="event-hscroll-wrap" id="hscroll-${jenis}"
+                    style="overflow-x:hidden;overflow-y:hidden;
+                            display:flex;gap:8px;padding-bottom:4px;
+                            flex-shrink:0;margin-bottom:12px;
+                            width:100%;">
+                    ${cards}
+                </div>`;
         }
 
-        function slideGo(jenis, dir) {
-            const photos = slideshowData[jenis];
-            if (!photos.length) return;
-            slideshowState[jenis] = (slideshowState[jenis] + dir + photos.length) % photos.length;
-            renderSlideshow(jenis);
-        }
-
-        // Build HTML sections
         let html = '';
-
-        if (d.photos_ywks && d.photos_ywks.length) {
-            slideshowData.YWKS = d.photos_ywks;
-            html += `
-                <div style="font-size:10px;font-weight:800;color:#7B0000;
-                            text-transform:uppercase;letter-spacing:.06em;
-                            padding:4px 0;border-bottom:2px solid #D0021B;
-                            margin-bottom:8px;flex-shrink:0;">YWKS</div>
-                <div id="slide-card-YWKS" style="border:1.5px solid #e5e7eb;
-                    border-radius:10px;overflow:hidden;background:#fff;
-                    flex-shrink:0;margin-bottom:12px;"></div>`;
-        }
-
-        if (d.photos_yjp && d.photos_yjp.length) {
-            slideshowData.YJP = d.photos_yjp;
-            html += `
-                <div style="font-size:10px;font-weight:800;color:#7B0000;
-                            text-transform:uppercase;letter-spacing:.06em;
-                            padding:4px 0;border-bottom:2px solid #D0021B;
-                            margin-bottom:8px;flex-shrink:0;">YJP INTERNAL</div>
-                <div id="slide-card-YJP" style="border:1.5px solid #e5e7eb;
-                    border-radius:10px;overflow:hidden;background:#fff;
-                    flex-shrink:0;margin-bottom:12px;"></div>`;
-        }
-
-        if (!html) {
+        if (d.photos_ywks && d.photos_ywks.length)
+            html += renderEventSection('YWKS', d.photos_ywks, 'YWKS');
+        if (d.photos_yjp && d.photos_yjp.length)
+            html += renderEventSection('YJP', d.photos_yjp, 'YGP Internal');
+        if (!html)
             html = `<div style="text-align:center;color:#9ca3af;
                         padding:1rem;font-size:12px;">Belum ada data event</div>`;
-        }
 
         grid.innerHTML = html;
 
-        // Render slideshow setelah DOM ready
-        if (d.photos_ywks && d.photos_ywks.length) renderSlideshow('YWKS');
-        if (d.photos_yjp  && d.photos_yjp.length)  renderSlideshow('YJP');
+        // Auto scroll horizontal per section
+        ['YWKS','YJP'].forEach(jenis => {
+            const wrap = document.getElementById(`hscroll-${jenis}`);
+            if (!wrap) return;
+
+            let pos       = 0;
+            let dir       = 1;
+            let paused    = false;
+
+            wrap.addEventListener('mouseenter', () => paused = true);
+            wrap.addEventListener('mouseleave', () => paused = false);
+
+            setInterval(() => {
+                if (paused) return;
+                const maxScroll = wrap.scrollWidth - wrap.clientWidth;
+                if (maxScroll <= 0) return;
+
+                pos += dir * 0.8;
+
+                if (pos >= maxScroll) {
+                    dir = -1;
+                    paused = true;
+                    setTimeout(() => paused = false, 1500);
+                } else if (pos <= 0) {
+                    dir = 1;
+                    paused = true;
+                    setTimeout(() => paused = false, 1500);
+                }
+
+                pos = Math.max(0, Math.min(maxScroll, pos));
+                wrap.scrollLeft = pos;
+            }, 16);
+        });
+
         // Auto slideshow setiap 4 detik
         setInterval(() => {
             if (slideshowData.YWKS.length > 1) slideGo('YWKS', 1);

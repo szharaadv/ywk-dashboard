@@ -123,8 +123,8 @@ $events = $db->query("
     <?php if (isset($_GET['deleted'])): ?>
         <div class="alert-success">✓ Data event berhasil dihapus.</div>
     <?php endif; ?>
-    <?php if (isset($_GET['created'])): ?>
-        <div class="alert-success">✓ Data event berhasil ditambahkan.</div>
+    <?php if (isset($_GET['updated'])): ?>
+        <div class="alert-success">✓ Data event berhasil diupdate.</div>
     <?php endif; ?>
 
     <div class="card">
@@ -172,9 +172,15 @@ $events = $db->query("
                     <td><?= htmlspecialchars($ev['judul_materi'] ?? '—') ?></td>
                     <td><?= htmlspecialchars($ev['peserta']      ?? '—') ?></td>
                     <td><?= htmlspecialchars($ev['departemen']   ?? '—') ?></td>
-                    <td>
+                    <td style="display:flex;gap:6px;align-items:center;">
+                        <a href="edit.php?id=<?= $ev['id'] ?>"
+                        style="background:#fff;color:#185FA5;border:1px solid #185FA5;
+                                border-radius:6px;font-size:11px;padding:3px 10px;
+                                text-decoration:none;font-weight:600;">
+                            Edit
+                        </a>
                         <form method="POST" style="display:inline"
-                              onsubmit="return confirm('Hapus data ini?')">
+                            onsubmit="return confirm('Hapus data ini?')">
                             <input type="hidden" name="delete_id" value="<?= $ev['id'] ?>">
                             <button type="submit" class="btn-del">Hapus</button>
                         </form>

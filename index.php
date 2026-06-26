@@ -821,58 +821,149 @@ fetch(API_BASE + 'overview_event.php')
 
         function rankBadge(rank) {
             const r = parseInt(rank);
-            if (r===1) return { label:'🥇 1st Winner', bg:'#D0021B',   color:'#fff',    border:'#D0021B' };
-            if (r===2) return { label:'🥈 2nd Winner', bg:'#374151',   color:'#fff',    border:'#374151' };
-            if (r===3) return { label:'🥉 3rd Winner', bg:'#3B6D11',   color:'#fff',    border:'#3B6D11' };
-            if (r===4) return { label:'4th Winner', bg:'#3B6D11',   color:'#fff',    border:'#3B6D11' };
-            if (r===5) return { label:'5th Winner', bg:'#3B6D11',   color:'#fff',    border:'#3B6D11' };
-            if (r===6) return { label:'6th Winner', bg:'#3B6D11',   color:'#fff',    border:'#3B6D11' };
+            if (isNaN(r) || r <= 0) return { label:'', bg:'#f4f5f7', color:'#6b7280', border:'#e5e7eb' };
 
-            return          { label:'',    bg:'#f4f5f7',   color:'#6b7280', border:'#e5e7eb' };
+            // Suffix otomatis: 1st, 2nd, 3rd, 4th, 5th, dst
+            const suffix = (n) => {
+                if (n % 100 >= 11 && n % 100 <= 13) return n + 'th';
+                switch (n % 10) {
+                    case 1: return n + 'st';
+                    case 2: return n + 'nd';
+                    case 3: return n + 'rd';
+                    default: return n + 'th';
+                }
+            };
+
+            const medal = r===1 ? '🥇 ' : r===2 ? '🥈 ' : r===3 ? '🥉 ' : '';
+
+            // Warna per rank
+            const colors = {
+                1: { bg:'#D0021B', color:'#fff', border:'#D0021B' },
+                2: { bg:'#374151', color:'#fff', border:'#374151' },
+                3: { bg:'#3B6D11', color:'#fff', border:'#3B6D11' },
+            };
+            const c = colors[r] ?? { bg:'#185FA5', color:'#fff', border:'#185FA5' };
+
+            return { label: `${medal}${suffix(r)} Winner`, ...c };
         }
 
-        // Tampilkan SEMUA foto (bukan slice 3)
-        const cards = d.photos.map(ev => {
-            const rb = rankBadge(ev.peringkat);
+        // ── State slideshow per section
+        const slideshowState = { YWKS: 0, YJP: 0 };
+        const slideshowData  = { YWKS: [], YJP: [] };
+
+        function renderSlideshow(jenis) {
+            const photos = slideshowData[jenis];
+            if (!photos || !photos.length) return;
+
+            const idx = slideshowState[jenis];
+            const ev  = photos[idx];
+            const rb  = rankBadge(ev.peringkat);
+
             const imgHtml = ev.foto
                 ? `<img src="assets/img/${ev.foto}"
-                        style="width:100%; height:120px; object-fit:cover;
-                               border-radius:8px 8px 0 0; display:block;"
+                        style="width:100%; height:140px; object-fit:cover;
+                            border-radius:8px 8px 0 0; display:block;"
                         onerror="this.style.display='none'">`
-                : `<div style="width:100%;height:120px;background:#f4f5f7;
-                               border-radius:8px 8px 0 0;display:flex;
-                               align-items:center;justify-content:center;
-                               font-size:28px;">📷</div>`;
-            return `
-                <div style="border:2px solid ${rb.border}; border-radius:10px;
-                            background:#fff; overflow:hidden; flex-shrink:0;">
-                    <div style="position:relative;">
-                        ${imgHtml}
-                        <span style="position:absolute; top:8px; right:8px;
-                                     font-size:10px; font-weight:700;
-                                     padding:3px 10px; border-radius:20px;
-                                     background:${rb.bg}; color:${rb.color};
-                                     box-shadow:0 1px 4px rgba(0,0,0,0.2);">
-                            ${rb.label}
-                        </span>
+                : `<div style="width:100%;height:140px;background:#f4f5f7;
+                            border-radius:8px 8px 0 0;display:flex;
+                            align-items:center;justify-content:center;
+                            font-size:28px;">📷</div>`;
+
+            document.getElementById(`slide-card-${jenis}`).innerHTML = `
+                <div style="position:relative;">
+                    ${imgHtml}
+                    ${rb.label ? `<span style="position:absolute;top:8px;right:8px;
+                        font-size:10px;font-weight:700;padding:3px 10px;
+                        border-radius:20px;background:${rb.bg};color:${rb.color};
+                        box-shadow:0 1px 4px rgba(0,0,0,0.2);">${rb.label}</span>` : ''}
+                </div>
+                <div style="padding:8px 10px;">
+                    <div style="font-size:12px;font-weight:700;color:#1a1a1a;
+                                line-height:1.3;margin-bottom:3px;">
+                        ${ev.judul_materi ?? '—'}
                     </div>
-                    <div style="padding:8px 10px;">
-                        <div style="font-size:12px; font-weight:700; color:#1a1a1a;
-                                    line-height:1.3; margin-bottom:3px;">
-                            ${ev.judul_materi ?? '—'}
-                        </div>
-                        <div style="font-size:10px; color:#6b7280;">
-                            ${ev.peserta ?? '—'}
-                        </div>
-                        ${ev.departemen
-                            ? `<div style="font-size:10px; color:#D0021B; margin-top:2px;
-                                           font-weight:600;">
-                                   ${ev.departemen}
-                               </div>`
-                            : ''}
+                    <div style="font-size:10px;color:#6b7280;">${ev.peserta ?? '—'}</div>
+                    ${ev.departemen
+                        ? `<div style="font-size:10px;color:#D0021B;margin-top:2px;
+                                    font-weight:600;">${ev.departemen}</div>`
+                        : ''}
+                </div>
+                <!-- Nav -->
+                <div style="display:flex;align-items:center;gap:6px;
+                            padding:4px 10px 8px;border-top:1px solid #f0f0f0;">
+                    <button onclick="slideGo('${jenis}',-1)"
+                        style="background:#fff;border:1px solid #e5e7eb;border-radius:6px;
+                            padding:2px 8px;cursor:pointer;font-size:14px;color:#6b7280;">
+                        ‹
+                    </button>
+                    <div style="flex:1;height:3px;background:#e5e7eb;border-radius:2px;">
+                        <div style="height:100%;background:#D0021B;border-radius:2px;
+                                    width:${((idx+1)/photos.length*100).toFixed(0)}%;
+                                    transition:width 0.3s ease;"></div>
                     </div>
-                </div>`;
-        }).join('');
+                    <span style="font-size:10px;color:#9ca3af;white-space:nowrap;">
+                        ${idx+1} / ${photos.length}
+                    </span>
+                    <button onclick="slideGo('${jenis}',1)"
+                        style="background:#fff;border:1px solid #e5e7eb;border-radius:6px;
+                            padding:2px 8px;cursor:pointer;font-size:14px;color:#6b7280;">
+                        ›
+                    </button>
+                </div>
+            `;
+        }
+
+        function slideGo(jenis, dir) {
+            const photos = slideshowData[jenis];
+            if (!photos.length) return;
+            slideshowState[jenis] = (slideshowState[jenis] + dir + photos.length) % photos.length;
+            renderSlideshow(jenis);
+        }
+
+        // Build HTML sections
+        let html = '';
+
+        if (d.photos_ywks && d.photos_ywks.length) {
+            slideshowData.YWKS = d.photos_ywks;
+            html += `
+                <div style="font-size:10px;font-weight:800;color:#7B0000;
+                            text-transform:uppercase;letter-spacing:.06em;
+                            padding:4px 0;border-bottom:2px solid #D0021B;
+                            margin-bottom:8px;flex-shrink:0;">YWKS</div>
+                <div id="slide-card-YWKS" style="border:1.5px solid #e5e7eb;
+                    border-radius:10px;overflow:hidden;background:#fff;
+                    flex-shrink:0;margin-bottom:12px;"></div>`;
+        }
+
+        if (d.photos_yjp && d.photos_yjp.length) {
+            slideshowData.YJP = d.photos_yjp;
+            html += `
+                <div style="font-size:10px;font-weight:800;color:#7B0000;
+                            text-transform:uppercase;letter-spacing:.06em;
+                            padding:4px 0;border-bottom:2px solid #D0021B;
+                            margin-bottom:8px;flex-shrink:0;">YJP INTERNAL</div>
+                <div id="slide-card-YJP" style="border:1.5px solid #e5e7eb;
+                    border-radius:10px;overflow:hidden;background:#fff;
+                    flex-shrink:0;margin-bottom:12px;"></div>`;
+        }
+
+        if (!html) {
+            html = `<div style="text-align:center;color:#9ca3af;
+                        padding:1rem;font-size:12px;">Belum ada data event</div>`;
+        }
+
+        grid.innerHTML = html;
+
+        // Render slideshow setelah DOM ready
+        if (d.photos_ywks && d.photos_ywks.length) renderSlideshow('YWKS');
+        if (d.photos_yjp  && d.photos_yjp.length)  renderSlideshow('YJP');
+        // Auto slideshow setiap 4 detik
+        setInterval(() => {
+            if (slideshowData.YWKS.length > 1) slideGo('YWKS', 1);
+        }, 4000);
+        setInterval(() => {
+            if (slideshowData.YJP.length > 1) slideGo('YJP', 1);
+        }, 4000);
 
         grid.innerHTML = cards;
 

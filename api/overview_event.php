@@ -53,24 +53,37 @@ $stmt4->execute([':tahun' => $last_tahun]);
 $winner = $stmt4->fetch();
 
 // Semua peserta dengan foto — tampil sebanyak jumlah participant
-$stmt5 = $db->prepare("
-    SELECT foto, judul_materi, peringkat, peserta, departemen
+// YWKS photos
+$stmtYwks = $db->prepare("
+    SELECT foto, judul_materi, peringkat, peserta, departemen, jenis_event
     FROM ywk_event
     WHERE tahun = :tahun
-    AND foto IS NOT NULL
-    AND foto != ''
+    AND foto IS NOT NULL AND foto != ''
+    AND jenis_event = 'YWKS'
     ORDER BY peringkat ASC
 ");
-$stmt5->execute([':tahun' => $last_tahun]);
-$photos = $stmt5->fetchAll();
-$stmt5->execute([':tahun' => $last_tahun]);
-$photos = $stmt5->fetchAll();
+$stmtYwks->execute([':tahun' => $last_tahun]);
+$photos_ywks = $stmtYwks->fetchAll();
+
+// YJP Internal photos
+$stmtYjp = $db->prepare("
+    SELECT foto, judul_materi, peringkat, peserta, departemen, jenis_event
+    FROM ywk_event
+    WHERE tahun = :tahun
+    AND foto IS NOT NULL AND foto != ''
+    AND jenis_event = 'YJP'
+    ORDER BY peringkat ASC
+");
+$stmtYjp->execute([':tahun' => $last_tahun]);
+$photos_yjp = $stmtYjp->fetchAll();
 
 echo json_encode([
     'tahun'              => $last_tahun,
     'total_materi'       => (int) ($summary['total_materi']         ?? 0),
     'total_participants' => (int) ($participants['total_participants'] ?? 0),
-    'winner'             => $winner  ?? null,
-    'photos'             => $photos
+    'winner'             => $winner ?? null,
+    'photos'             => array_merge($photos_ywks, $photos_yjp), // backward compat
+    'photos_ywks'        => $photos_ywks,
+    'photos_yjp'         => $photos_yjp,
 ]);
 ?>

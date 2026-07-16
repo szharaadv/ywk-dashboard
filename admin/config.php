@@ -25,7 +25,13 @@ function isAdminLoggedIn() {
 
 function requireAdminLogin() {
     if (!isAdminLoggedIn()) {
-        header('Location: /admin/login.php');
+        // Bangun base URL folder /admin/ secara dinamis agar berfungsi
+        // baik saat app di root (/admin/) maupun di subfolder (/ywk-dashboard/admin/),
+        // serta dari halaman admin biasa maupun nested (admin/kpi/, admin/event/).
+        $script = $_SERVER['SCRIPT_NAME'];
+        $pos    = strpos($script, '/admin/');
+        $base   = $pos !== false ? substr($script, 0, $pos + strlen('/admin/')) : '/admin/';
+        header('Location: ' . $base . 'login.php');
         exit;
     }
 }

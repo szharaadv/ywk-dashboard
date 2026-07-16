@@ -183,9 +183,11 @@ fetch('../api/kaizen_data.php' + API_QS)
                 <td class="title-col">${k.judul}</td>
                 <td>
                     ${k.category
-                        ? `<span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;
-                                        background:${categoryColor(k.category)}18;color:${categoryColor(k.category)};">
-                                ${k.category}</span>`
+                        ? k.category.split(',').map(c => c.trim()).filter(Boolean).map(c =>
+                            `<span style="display:inline-block;font-size:10px;font-weight:700;padding:2px 8px;
+                                          border-radius:20px;margin:1px 2px;
+                                          background:${categoryColor(c)}18;color:${categoryColor(c)};">
+                                ${c}</span>`).join('')
                         : '—'}
                 </td>
                 <td>${k.section ?? '—'}</td>

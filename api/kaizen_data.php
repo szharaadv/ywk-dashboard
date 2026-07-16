@@ -21,7 +21,9 @@ if ($status !== 'all') {
     $params[':status'] = $status;
 }
 if ($category !== 'all') {
-    $where .= " AND category = :category";
+    // Kategori bisa berisi banyak nilai dipisah koma (mis. "Cost Down, Quality").
+    // Normalkan spasi di sekitar koma lalu cocokkan salah satu nilai via FIND_IN_SET.
+    $where .= " AND FIND_IN_SET(:category, REPLACE(REPLACE(category, ' ,', ','), ', ', ',')) > 0";
     $params[':category'] = $category;
 }
 

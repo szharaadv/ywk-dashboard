@@ -46,7 +46,8 @@ if ($header && count($header) === 1) {
 }
 
 while (($data = fgetcsv($handle, 1000, $delimiter)) !== false) {
-    if (count($data) >= 1 && !empty(trim($data[0] ?? ''))) {
+    // Simpan baris jika kolom "IDE YANG DIUSULKAN" (index 3) terisi
+    if (!empty(trim($data[3] ?? ''))) {
         $rows[] = $data;
     }
 }
@@ -72,14 +73,34 @@ $stmt = $db->prepare("
 $inserted = 0;
 $errors   = [];
 
+// Kolom kategori (index → nama) yang diisi tanda "V"
+$catCols = [
+    4 => 'Productivity',
+    5 => 'Cost Down',
+    6 => 'Quality',
+    7 => 'Safety',
+    8 => '3S-3T',
+];
+
 foreach ($rows as $i => $row) {
-    $judul    = trim($row[0] ?? '');
-    $category = trim($row[1] ?? '');
-    $section  = trim($row[2] ?? '');
-    $purposed = trim($row[3] ?? '');
-    $no_ip    = trim($row[4] ?? '');
-    $score    = is_numeric(trim($row[5] ?? '')) ? (float) trim($row[5]) : null;
-    $status   = trim($row[6] ?? 'Implemented');
+    $no_ip    = trim($row[1] ?? '');   // NO IP
+    $purposed = trim($row[2] ?? '');   // NAMA PEMBUAT (tampil sebagai "pic")
+    $judul    = trim($row[3] ?? '');   // IDE YANG DIUSULKAN
+
+    // Gabungkan kategori yang ditandai (V / v / ✓ / 1 / x) → "Cost Down, Quality"
+    $cats = [];
+    foreach ($catCols as $idx => $name) {
+        $mark = strtolower(trim($row[$idx] ?? ''));
+        if ($mark !== '' && $mark !== '0' && $mark !== '-') {
+            $cats[] = $name;
+        }
+    }
+    $category = implode(', ', $cats);
+
+    $section  = trim($row[9] ?? '');    // DEPT
+    $status   = trim($row[10] ?? '');   // Realisasi → status
+    if ($status === '') $status = 'Implemented';
+    $score    = is_numeric(trim($row[11] ?? '')) ? (float) trim($row[11]) : null;
 
     if (empty($judul)) continue;
 

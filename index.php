@@ -362,7 +362,8 @@ const YEAR_BASE  = new Date().getFullYear();
 const EXCLUDED_LINES = ['Test Run Line'];
 
 // Map section tab ke location_id
-const SEC_LOC_ID = { MS1:'1', MS2:'2', Conrod:'3', HDE:'4' };
+// location: 1=Connecting Rod, 2=Machine Shop 1, 3=Machine Shop 2, 4=Assembly
+const SEC_LOC_ID = { MS1:'2', MS2:'3', Conrod:'1', HDE:'4' };
 const MONTHS_FY  = ['Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec','Jan','Feb','Mar'];
 function calMonthToFiscalIdx(m) { return (m - 4 + 12) % 12; }
 

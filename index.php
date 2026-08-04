@@ -354,7 +354,8 @@ const KPI_LABELS = {
     productivity: 'Productivity & Pass Rate'
 };
 
-const PUBLIC_API = 'http://productivity-ms.yadin.com/api/public_api.php';
+const PUBLIC_API = (window.location.pathname.includes('/ywk-dashboard/')
+    ? '/ywk-dashboard/api/' : '/api/') + 'productivity_proxy.php';
 const YEAR_BASE  = new Date().getFullYear();
 
 // Map section tab ke location_id

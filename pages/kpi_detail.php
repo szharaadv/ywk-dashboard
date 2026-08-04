@@ -327,7 +327,7 @@ $page_title = 'KPI DETAIL — ' . strtoupper($kpi_tabs[$active_kpi]);
 
 <script>
 // ─── CONFIG ──────────────────────────────────────────────────────────────────
-const PUBLIC_API = 'http://productivity-ms.yadin.com/api/public_api.php';
+const PUBLIC_API = '../api/productivity_proxy.php';
 const MONTHS_FY  = ['Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec','Jan','Feb','Mar'];
 const SEC_COLOR  = { MS1:'#185FA5', MS2:'#2e7d32', Conrod:'#854F0B', HDE:'#6B2D8B' };
 const C          = { prod26:'#1500d1', prod25:'#8cbab7', pass26:'#F59E0B', pass25:'#ff5900' };

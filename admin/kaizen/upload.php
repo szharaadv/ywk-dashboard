@@ -99,7 +99,16 @@ foreach ($rows as $i => $row) {
 
     $section  = trim($row[9] ?? '');    // DEPT
     $status   = trim($row[10] ?? '');   // Realisasi → status
-    if ($status === '') $status = 'Implemented';
+
+    // Normalkan status ke 3 nilai baku (tahan typo mis. "Impelemented")
+    $sl = strtolower(str_replace(' ', '', $status));
+    if ($sl === '' || str_contains($sl, 'impl') || str_contains($sl, 'impel')) {
+        $status = 'Implemented';
+    } elseif (str_contains($sl, 'approv')) {
+        $status = 'Approved';
+    } elseif (str_contains($sl, 'open')) {
+        $status = 'Open';
+    }
     $score    = is_numeric(trim($row[11] ?? '')) ? (float) trim($row[11]) : null;
 
     if (empty($judul)) continue;

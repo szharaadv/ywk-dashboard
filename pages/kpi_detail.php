@@ -328,6 +328,8 @@ $page_title = 'KPI DETAIL — ' . strtoupper($kpi_tabs[$active_kpi]);
 <script>
 // ─── CONFIG ──────────────────────────────────────────────────────────────────
 const PUBLIC_API = '../api/productivity_proxy.php';
+// Line yang tidak dipakai — dikecualikan dari chart productivity
+const EXCLUDED_LINES = ['Test Run Line'];
 const MONTHS_FY  = ['Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec','Jan','Feb','Mar'];
 const SEC_COLOR  = { MS1:'#185FA5', MS2:'#2e7d32', Conrod:'#854F0B', HDE:'#6B2D8B' };
 const C          = { prod26:'#1500d1', prod25:'#8cbab7', pass26:'#F59E0B', pass25:'#ff5900' };
@@ -640,6 +642,7 @@ function transformProdRows(rows) {
     const lm={};
     rows.forEach(row=>{
         const lid=String(row.location_id), ln=row.line_name;
+        if(EXCLUDED_LINES.includes(ln)) return; // line tidak dipakai (data tidak valid)
         if(!lm[lid]) lm[lid]={};
         if(!lm[lid][ln]) lm[lid][ln]={
             prod25:new Array(12).fill(null), prod26:new Array(12).fill(null),

@@ -358,6 +358,9 @@ const PUBLIC_API = (window.location.pathname.includes('/ywk-dashboard/')
     ? '/ywk-dashboard/api/' : '/api/') + 'productivity_proxy.php';
 const YEAR_BASE  = new Date().getFullYear();
 
+// Line yang tidak dipakai — dikecualikan dari chart productivity
+const EXCLUDED_LINES = ['Test Run Line'];
+
 // Map section tab ke location_id
 const SEC_LOC_ID = { MS1:'1', MS2:'2', Conrod:'3', HDE:'4' };
 const MONTHS_FY  = ['Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec','Jan','Feb','Mar'];
@@ -598,6 +601,7 @@ async function loadProductivityChart() {
         const lineMap = {};
         rows.forEach(row => {
             const ln = row.line_name;
+            if (EXCLUDED_LINES.includes(ln)) return; // line tidak dipakai (data tidak valid)
             if (!lineMap[ln]) lineMap[ln] = {
                 prod25: new Array(12).fill(null),
                 prod26: new Array(12).fill(null),

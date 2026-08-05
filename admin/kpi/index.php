@@ -6,7 +6,13 @@ require_once __DIR__ . '/../../config/db.php';
 $db = getDB();
 
 $total_or  = $db->query("SELECT COUNT(*) FROM kpi_operation_ratio WHERE YEAR(periode) >= 2026")->fetchColumn();
-$total_ito = $db->query("SELECT COUNT(*) FROM kpi_ito")->fetchColumn();
+
+// Aman kalau tabel kpi_ito belum dibuat (mis. belum di-migrate di production)
+try {
+    $total_ito = $db->query("SELECT COUNT(*) FROM kpi_ito")->fetchColumn();
+} catch (Exception $e) {
+    $total_ito = 0;
+}
 ?>
 <!DOCTYPE html>
 <html lang="id">

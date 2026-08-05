@@ -5,7 +5,8 @@ requireAdminLogin();
 require_once __DIR__ . '/../../config/db.php';
 $db = getDB();
 
-$total_or = $db->query("SELECT COUNT(*) FROM kpi_operation_ratio WHERE YEAR(periode) >= 2026")->fetchColumn();
+$total_or  = $db->query("SELECT COUNT(*) FROM kpi_operation_ratio WHERE YEAR(periode) >= 2026")->fetchColumn();
+$total_ito = $db->query("SELECT COUNT(*) FROM kpi_ito")->fetchColumn();
 ?>
 <!DOCTYPE html>
 <html lang="id">
@@ -101,6 +102,16 @@ $total_or = $db->query("SELECT COUNT(*) FROM kpi_operation_ratio WHERE YEAR(peri
                 <div class="menu-title">Quality</div>
                 <div class="menu-sub">Input data Quality per section per bulan</div>
                 <div class="stat-badge">Input Quality</div>
+            </div>
+        </a>
+
+        <!-- ITO -->
+        <a href="ito.php" class="menu-card">
+            <div class="menu-icon">📦</div>
+            <div>
+                <div class="menu-title">ITO — Inventory Turn Over</div>
+                <div class="menu-sub">Input ITO Days &amp; Inventory Amount per bulan</div>
+                <div class="stat-badge"><?= $total_ito ?> data</div>
             </div>
         </a>
     </div>

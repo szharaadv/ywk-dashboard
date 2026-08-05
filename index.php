@@ -51,6 +51,11 @@ $ppm_total = count(array_filter(
         }
         .fy-label { font-size: 10px; color: #9ca3af; text-align: right; }
 
+        /* Header tabel Kaizen tetap terlihat saat kotak di-scroll */
+        .kaizen-table thead th {
+            position: sticky; top: 0; z-index: 1; background: #f4f5f7;
+        }
+
         @keyframes alertPulse {
     0%   { box-shadow: 0 0 0 0 rgba(208,2,27,0.5); }
     50%  { box-shadow: 0 0 0 8px rgba(208,2,27,0); }
@@ -182,9 +187,10 @@ $ppm_total = count(array_filter(
             </div>
             <!-- END KOLOM 1 -->
 
-            <!-- KOLOM 2: Kaizen -->
+            <!-- KOLOM 2: Kaizen + ITO -->
             <div class="home-col-kaizen">
-                <div class="card" style="flex:1; min-height:0; overflow:hidden;
+
+                <div class="card" style="flex:1.6; min-height:0; overflow:hidden;
                             display:flex; flex-direction:column;">
                     <div class="kaizen-summary-bar" style="flex-shrink:0;">
                         <span class="ksb-label">Kaizen</span>
@@ -202,7 +208,7 @@ $ppm_total = count(array_filter(
                     </div>
                     <div class="kaizen-top-banner" id="kaizen-top-banner"
                          style="flex-shrink:0;">Loading...</div>
-                    <div style="flex:1; min-height:0; overflow-y:auto;">
+                    <div style="flex:0 0 auto; max-height:130px; min-height:0; overflow-y:auto;">
                         <table class="kaizen-table">
                             <thead>
                                 <tr>
@@ -260,13 +266,13 @@ $ppm_total = count(array_filter(
                         <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
                             <div>
                                 <div style="font-size:9px; font-weight:700; color:#374151; margin-bottom:4px; text-align:center;">AWARENESS RATIO</div>
-                                <div style="position:relative; height:220px;">
+                                <div style="position:relative; height:178px;">
                                     <canvas id="chartAwareness"></canvas>
                                 </div>
                             </div>
                             <div>
                                 <div style="font-size:9px; font-weight:700; color:#374151; margin-bottom:4px; text-align:center;">CATEGORY TENDENCY</div>
-                                <div style="position:relative; height:220px;">
+                                <div style="position:relative; height:178px;">
                                     <canvas id="chartCategory"></canvas>
                                 </div>
                             </div>
@@ -274,6 +280,23 @@ $ppm_total = count(array_filter(
                     </div>
 
                 </div>
+
+                <!-- ITO — Inventory Turn Over -->
+                <div class="card" style="flex:1; min-height:0; display:flex;
+                            flex-direction:column; padding:0.6rem 0.875rem; overflow:hidden;">
+                    <div class="card-header" style="flex-shrink:0; margin-bottom:0.3rem;">
+                        <div>
+                            <div class="card-title">ITO — Inventory Turn Over</div>
+                            <div style="font-size:10px; color:#6b7280; margin-top:1px;">
+                                Days &amp; Inventory Amount · FY2025 vs FY2026
+                            </div>
+                        </div>
+                    </div>
+                    <div style="flex:1; position:relative; min-height:0;">
+                        <canvas id="chartITO" style="width:100%; height:100%;"></canvas>
+                    </div>
+                </div>
+
             </div>
             <!-- END KOLOM 2 -->
 
@@ -789,6 +812,66 @@ document.querySelectorAll('.ytd-sec-tab').forEach(btn => {
 
 updateSecTabs();
 loadYTD();
+
+// ===== ITO — Inventory Turn Over =====
+(function loadITOChart() {
+    const el = document.getElementById('chartITO');
+    if (!el || typeof Chart === 'undefined') return;
+    fetch(API_BASE + 'kpi_ito.php' + QS)
+        .then(r => r.json())
+        .then(j => renderITOChart(el, j))
+        .catch(() => {});
+})();
+
+function renderITOChart(el, j) {
+    const curFy = j.cur_fy, lastFy = j.last_fy;
+    const yr = fy => (fy || '').replace('fy', '');   // "fy2025" → "2025"
+    const days = j.days || {}, amt = j.amt || {};
+    new Chart(el, {
+        type: 'bar',
+        data: {
+            labels: j.labels || MONTHS_FY,
+            datasets: [
+                { type:'bar', label:'Inventory ' + yr(lastFy), data: amt[lastFy] || [],
+                  backgroundColor:'#8cbab7', yAxisID:'yAmt', order:2 },
+                { type:'bar', label:'Inventory ' + yr(curFy), data: amt[curFy] || [],
+                  backgroundColor:'#1500d1', yAxisID:'yAmt', order:2 },
+                { type:'line', label:'ITO ' + yr(lastFy), data: days[lastFy] || [],
+                  borderColor:'#ff5900', backgroundColor:'#ff5900', borderWidth:2,
+                  pointRadius:2, pointHoverRadius:4, tension:0.3, spanGaps:false,
+                  yAxisID:'yDays', order:1 },
+                { type:'line', label:'ITO ' + yr(curFy), data: days[curFy] || [],
+                  borderColor:'#F59E0B', backgroundColor:'#F59E0B', borderWidth:2,
+                  pointRadius:2, pointHoverRadius:4, tension:0.3, spanGaps:false,
+                  yAxisID:'yDays', order:1 },
+            ]
+        },
+        options: {
+            responsive:true, maintainAspectRatio:false,
+            interaction:{ mode:'index', intersect:false },
+            plugins:{
+                legend:{ display:true, position:'top', align:'end',
+                         labels:{ font:{size:9}, boxWidth:6, boxHeight:6,
+                                  pointStyleWidth:8, padding:6, usePointStyle:true } },
+                tooltip:{ callbacks:{ label:ctx => {
+                    const v = ctx.parsed.y; if (v == null) return null;
+                    return ctx.dataset.label.includes('Inventory')
+                        ? ` ${ctx.dataset.label}: ${v}`
+                        : ` ${ctx.dataset.label}: ${v} hari`;
+                }}}
+            },
+            scales:{
+                x:  { ticks:{ font:{size:9}, maxRotation:0, autoSkip:false }, grid:{ color:'#f0f0f0' } },
+                yAmt: { position:'left',
+                        title:{ display:true, text:'Amount', font:{size:9}, color:'#6b7280' },
+                        ticks:{ font:{size:9} }, grid:{ color:'#f0f0f0' } },
+                yDays:{ position:'right',
+                        title:{ display:true, text:'Days', font:{size:9}, color:'#6b7280' },
+                        ticks:{ font:{size:9} }, grid:{ drawOnChartArea:false } },
+            }
+        }
+    });
+}
 
 fetch(API_BASE + 'overview_kaizen.php')
     .then(r => r.json())

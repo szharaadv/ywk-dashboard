@@ -24,32 +24,39 @@ $alert_type = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save'])) {
     $fy       = $_POST['fy'] ?? 'fy2026';
     $periodes = fyToPeriodes($fy);
-    $saved = 0; $failed = 0;
+    $saved = 0; $failed = 0; $first_error = '';
 
-    $stmt = $db->prepare("
-        INSERT INTO kpi_ito (periode, ito_days, inventory_amount)
-        VALUES (?, ?, ?)
-        ON DUPLICATE KEY UPDATE ito_days = VALUES(ito_days), inventory_amount = VALUES(inventory_amount)
-    ");
+    try {
+        $stmt = $db->prepare("
+            INSERT INTO kpi_ito (periode, ito_days, inventory_amount)
+            VALUES (?, ?, ?)
+            ON DUPLICATE KEY UPDATE ito_days = VALUES(ito_days), inventory_amount = VALUES(inventory_amount)
+        ");
 
-    foreach ($periodes as $i => $periode) {
-        $days = trim($_POST['days'][$i] ?? '');
-        $amt  = trim($_POST['amount'][$i] ?? '');
-        if ($days === '' && $amt === '') continue;   // lewati baris kosong
-        try {
-            $stmt->execute([
-                $periode,
-                $days !== '' ? (float) $days : null,
-                $amt  !== '' ? (float) $amt  : null,
-            ]);
-            $saved++;
-        } catch (Exception $e) {
-            $failed++;
+        foreach ($periodes as $i => $periode) {
+            $days = trim($_POST['days'][$i] ?? '');
+            $amt  = trim($_POST['amount'][$i] ?? '');
+            if ($days === '' && $amt === '') continue;   // lewati baris kosong
+            try {
+                $stmt->execute([
+                    $periode,
+                    $days !== '' ? (float) $days : null,
+                    $amt  !== '' ? (float) $amt  : null,
+                ]);
+                $saved++;
+            } catch (Exception $e) {
+                $failed++;
+                if ($first_error === '') $first_error = $e->getMessage();
+            }
         }
+    } catch (Exception $e) {
+        $failed++;
+        $first_error = $e->getMessage();
     }
 
     if ($failed > 0) {
-        $alert = "⚠️ $saved data berhasil, $failed data gagal";
+        $alert = "⚠️ $saved data berhasil, $failed data gagal"
+               . ($first_error ? " — $first_error" : '');
         $alert_type = 'danger';
     } else {
         $alert = "✓ $saved data berhasil disimpan untuk " . strtoupper($fy);

@@ -155,7 +155,7 @@ $ppm_total = count(array_filter(
                 </div>
 
                 <!-- KPI YTD Chart -->
-                <div class="card" style="flex:1; min-height:0; display:flex;
+                <div class="card" style="flex:0 0 359px; min-height:0; display:flex;
                             flex-direction:column; padding:0.6rem 0.875rem; overflow:hidden;">
                     <div class="card-header"
                          style="flex-wrap:wrap; gap:4px; margin-bottom:0.3rem; flex-shrink:0;">
@@ -164,11 +164,7 @@ $ppm_total = count(array_filter(
                             <div style="font-size:10px; color:#6b7280; margin-top:1px;"
                                  id="ytd-home-subtitle">Loading...</div>
                         </div>
-                        <div style="display:flex; flex-direction:column;
-                                    gap:3px; align-items:flex-end;">
-                            <div style="font-size:10px; font-weight:700; color:#6b7280; text-transform:uppercase; letter-spacing:0.06em; align-self:center;">
-                                Productivity & Pass Rate
-                            </div>
+                        <div style="display:flex; align-items:flex-end;">
                             <div class="ytd-sec-tabs">
                                 <button class="ytd-sec-tab active" data-sec="MS1">MS1</button>
                                 <button class="ytd-sec-tab" data-sec="MS2">MS2</button>
@@ -208,7 +204,7 @@ $ppm_total = count(array_filter(
                     </div>
                     <div class="kaizen-top-banner" id="kaizen-top-banner"
                          style="flex-shrink:0;">Loading...</div>
-                    <div style="flex:0 0 auto; max-height:130px; min-height:0; overflow-y:auto;">
+                    <div style="flex:1; min-height:0; overflow-y:auto;">
                         <table class="kaizen-table">
                             <thead>
                                 <tr>
@@ -266,13 +262,13 @@ $ppm_total = count(array_filter(
                         <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
                             <div>
                                 <div style="font-size:9px; font-weight:700; color:#374151; margin-bottom:4px; text-align:center;">AWARENESS RATIO</div>
-                                <div style="position:relative; height:178px;">
+                                <div style="position:relative; height:170px;">
                                     <canvas id="chartAwareness"></canvas>
                                 </div>
                             </div>
                             <div>
                                 <div style="font-size:9px; font-weight:700; color:#374151; margin-bottom:4px; text-align:center;">CATEGORY TENDENCY</div>
-                                <div style="position:relative; height:178px;">
+                                <div style="position:relative; height:170px;">
                                     <canvas id="chartCategory"></canvas>
                                 </div>
                             </div>
@@ -282,7 +278,7 @@ $ppm_total = count(array_filter(
                 </div>
 
                 <!-- ITO — Inventory Turn Over -->
-                <div class="card" style="flex:1; min-height:0; display:flex;
+                <div class="card" style="flex:0 0 359px; min-height:0; display:flex;
                             flex-direction:column; padding:0.6rem 0.875rem; overflow:hidden;">
                     <div class="card-header" style="flex-shrink:0; margin-bottom:0.3rem;">
                         <div>
@@ -863,7 +859,7 @@ function renderITOChart(el, j) {
             scales:{
                 x:  { ticks:{ font:{size:9}, maxRotation:0, autoSkip:false }, grid:{ color:'#f0f0f0' } },
                 yAmt: { position:'left',
-                        title:{ display:true, text:'Amount', font:{size:9}, color:'#6b7280' },
+                        title:{ display:true, text:'Amount (IDR)', font:{size:9}, color:'#6b7280' },
                         ticks:{ font:{size:9} }, grid:{ color:'#f0f0f0' } },
                 yDays:{ position:'right',
                         title:{ display:true, text:'Days', font:{size:9}, color:'#6b7280' },

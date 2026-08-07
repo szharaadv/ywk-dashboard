@@ -78,8 +78,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save'])) {
         try {
             $reject_inhouseVal = $reject_inhouse !== '' ? (float)$reject_inhouse : null;
             $reject_targetVal  = $reject_target  !== '' ? (float)$reject_target  : null;
-            $customer_claimVal = $customer_claim !== '' ? (int)$customer_claim   : null;
-            $claim_targetVal   = $claim_target   !== '' ? (int)$claim_target     : null;
+            $customer_claimVal = $customer_claim !== '' ? (float)$customer_claim : null;
+            $claim_targetVal   = $claim_target   !== '' ? (float)$claim_target   : null;
 
             error_log("    → Values: reject_inhouse=$reject_inhouseVal, reject_target=$reject_targetVal, claim=$customer_claimVal, claim_target=$claim_targetVal");
 
@@ -366,7 +366,7 @@ $pct_filled = round($filled / 12 * 100);
                             <input type="number" name="customer_claim[]"
                                    class="num-input <?= isset($existing[$p]) && $existing[$p]['customer_claim'] !== null ? 'has-value' : '' ?>"
                                    value="<?= isset($existing[$p]) ? ($existing[$p]['customer_claim'] ?? '') : '' ?>"
-                                   min="0" step="1" placeholder="—">
+                                   min="0" step="0.01" placeholder="—">
                         </td>
                         <?php endforeach; ?>
                     </tr>
@@ -377,7 +377,7 @@ $pct_filled = round($filled / 12 * 100);
                             <input type="number" name="claim_target[]"
                                    class="num-input <?= isset($existing[$p]) && $existing[$p]['claim_target'] !== null ? 'has-value' : '' ?>"
                                    value="<?= isset($existing[$p]) ? ($existing[$p]['claim_target'] ?? '') : '' ?>"
-                                   min="0" step="1" placeholder="—">
+                                   min="0" step="0.01" placeholder="—">
                         </td>
                         <?php endforeach; ?>
                     </tr>

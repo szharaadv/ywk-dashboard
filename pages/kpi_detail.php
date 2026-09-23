@@ -329,7 +329,7 @@ $page_title = 'KPI DETAIL — ' . strtoupper($kpi_tabs[$active_kpi]);
 // ─── CONFIG ──────────────────────────────────────────────────────────────────
 const PUBLIC_API = '../api/productivity_proxy.php';
 // Line yang tidak dipakai — dikecualikan dari chart productivity
-const EXCLUDED_LINES = ['Test Run Line'];
+const EXCLUDED_LINES = ['Test Run Line', 'Central Packing'];
 const MONTHS_FY  = ['Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec','Jan','Feb','Mar'];
 const SEC_COLOR  = { MS1:'#185FA5', MS2:'#2e7d32', Conrod:'#854F0B', HDE:'#6B2D8B' };
 const C          = { prod26:'#1500d1', prod25:'#8cbab7', pass26:'#F59E0B', pass25:'#ff5900' };

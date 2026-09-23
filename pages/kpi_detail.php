@@ -247,7 +247,6 @@ $page_title = 'KPI DETAIL — ' . strtoupper($kpi_tabs[$active_kpi]);
             <div class="metric-card <?= $id ?>" id="mcard-<?= $id ?>">
                 <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
                     <div class="metric-label" id="metric-<?= $id ?>-label"><?= $label ?></div>
-                    <div style="font-size:20px;line-height:1;" id="metric-<?= $id ?>-emoji">➖</div>
                 </div>
                 <div id="metric-<?= $id ?>-normal">
                     <div class="metric-value" id="metric-<?= $id ?>">—</div>

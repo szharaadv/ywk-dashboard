@@ -829,9 +829,9 @@ function renderITOChart(el, j) {
             labels: j.labels || MONTHS_FY,
             datasets: [
                 { type:'bar', label:'Inventory ' + yr(lastFy), data: amt[lastFy] || [],
-                  backgroundColor:'#8cbab7', yAxisID:'yAmt', order:2 },
+                  backgroundColor:'rgba(140,186,183,0.8)', yAxisID:'yAmt', order:2 },
                 { type:'bar', label:'Inventory ' + yr(curFy), data: amt[curFy] || [],
-                  backgroundColor:'#1500d1', yAxisID:'yAmt', order:2 },
+                  backgroundColor:'rgba(21,0,209,0.5)', yAxisID:'yAmt', order:2 },
                 { type:'line', label:'ITO ' + yr(lastFy), data: days[lastFy] || [],
                   borderColor:'#ff5900', backgroundColor:'#ff5900', borderWidth:2,
                   pointRadius:2, pointHoverRadius:4, tension:0.3, spanGaps:false,

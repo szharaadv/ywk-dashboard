@@ -280,12 +280,28 @@ $ppm_total = count(array_filter(
                 <!-- ITO — Inventory Turn Over -->
                 <div class="card" style="flex:0 0 359px; min-height:0; display:flex;
                             flex-direction:column; padding:0.6rem 0.875rem; overflow:hidden;">
-                    <div class="card-header" style="flex-shrink:0; margin-bottom:0.3rem;">
-                        <div>
+                    <div class="card-header" style="flex-shrink:0; margin-bottom:0.3rem; gap:6px;">
+                        <div style="min-width:0;">
                             <div class="card-title">ITO — Inventory Turn Over</div>
-                            <div style="font-size:10px; color:#6b7280; margin-top:1px;">
-                                Days &amp; Inventory Amount · FY2025 vs FY2026
+                            <div style="font-size:10px; color:#6b7280; margin-top:1px;" id="ito-subtitle">
+                                Days &amp; Inventory Amount
                             </div>
+                        </div>
+                        <div style="display:flex; align-items:center; gap:6px; flex-shrink:0;">
+                            <select id="ito-year-select"
+                                style="font-size:10px; border:1px solid #e5e7eb; border-radius:6px;
+                                       padding:2px 6px; background:#fff; cursor:pointer; outline:none;">
+                                <option value="">Ikut Dashboard</option>
+                                <option value="fy2022">FY2022</option>
+                                <option value="fy2023">FY2023</option>
+                                <option value="fy2024">FY2024</option>
+                                <option value="fy2025">FY2025</option>
+                                <option value="fy2026">FY2026</option>
+                                <option value="fy2027">FY2027</option>
+                            </select>
+                            <button id="ito-capture" title="Capture / unduh foto grafik"
+                                style="font-size:12px; line-height:1; border:1px solid #e5e7eb; border-radius:6px;
+                                       background:#fff; cursor:pointer; padding:3px 7px;">📷</button>
                         </div>
                     </div>
                     <div style="flex:1; position:relative; min-height:0;">
@@ -810,20 +826,77 @@ updateSecTabs();
 loadYTD();
 
 // ===== ITO — Inventory Turn Over =====
-(function loadITOChart() {
+let itoChart = null;
+
+function loadITOChart(year) {
     const el = document.getElementById('chartITO');
     if (!el || typeof Chart === 'undefined') return;
-    fetch(API_BASE + 'kpi_ito.php' + QS)
+    // year kosong = ikut dashboard (pakai QS); selain itu override khusus grafik
+    const qs = year ? ('?year=' + year) : QS;
+    fetch(API_BASE + 'kpi_ito.php' + qs)
         .then(r => r.json())
         .then(j => renderITOChart(el, j))
         .catch(() => {});
+}
+
+// Plugin latar putih agar hasil capture tidak transparan
+const itoWhiteBg = {
+    id: 'itoWhiteBg',
+    beforeDraw: (chart) => {
+        const ctx = chart.ctx;
+        ctx.save();
+        ctx.globalCompositeOperation = 'destination-over';
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, chart.width, chart.height);
+        ctx.restore();
+    }
+};
+
+// Inisialisasi + wiring kontrol ITO (dropdown tahun & tombol capture)
+(function initITO() {
+    loadITOChart('');   // default: ikut dashboard
+    const sel = document.getElementById('ito-year-select');
+    if (sel) sel.addEventListener('change', () => loadITOChart(sel.value));
+    const cap = document.getElementById('ito-capture');
+    if (cap) cap.addEventListener('click', () => {
+        if (!itoChart) return;
+        // Render salinan chart di canvas offscreen dengan resolusi 3× (HD)
+        const src  = itoChart.canvas;
+        const cssW = Math.round(src.clientWidth)  || 700;
+        const cssH = Math.round(src.clientHeight) || 300;
+        const wrap = document.createElement('div');
+        wrap.style.cssText = `position:fixed;left:-99999px;top:0;width:${cssW}px;height:${cssH}px;`;
+        const off = document.createElement('canvas');
+        wrap.appendChild(off);
+        document.body.appendChild(wrap);
+        const tmp = new Chart(off, {
+            type: itoChart.config.type,
+            data: itoChart.config.data,
+            plugins: [itoWhiteBg],
+            options: Object.assign({}, itoChart.config.options, {
+                responsive: true, maintainAspectRatio: false, animation: false, devicePixelRatio: 3,
+            }),
+        });
+        const url = tmp.toBase64Image('image/png', 1);
+        tmp.destroy(); wrap.remove();
+
+        const a = document.createElement('a');
+        a.href = url;
+        const y = document.getElementById('ito-year-select')?.value || 'dashboard';
+        a.download = `ITO_${y}_${new Date().toISOString().slice(0, 10)}.png`;
+        document.body.appendChild(a); a.click(); a.remove();
+    });
 })();
 
 function renderITOChart(el, j) {
     const curFy = j.cur_fy, lastFy = j.last_fy;
     const yr = fy => (fy || '').replace('fy', '');   // "fy2025" → "2025"
     const days = j.days || {}, amt = j.amt || {};
-    new Chart(el, {
+    const sub = document.getElementById('ito-subtitle');
+    if (sub) sub.textContent = `Days & Inventory Amount · FY${yr(lastFy)} vs FY${yr(curFy)}`;
+    if (itoChart) { itoChart.destroy(); itoChart = null; }
+    itoChart = new Chart(el, {
+        plugins: [itoWhiteBg],
         type: 'bar',
         data: {
             labels: j.labels || MONTHS_FY,

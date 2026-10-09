@@ -6,7 +6,10 @@ require_once __DIR__ . '/../../config/db.php';
 $db = getDB();
 
 $months  = ['Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec','Jan','Feb','Mar'];
-$fy_list = ['fy2025' => 2025, 'fy2026' => 2026, 'fy2027' => 2027];
+$fy_list = [
+    'fy2022' => 2022, 'fy2023' => 2023, 'fy2024' => 2024,
+    'fy2025' => 2025, 'fy2026' => 2026, 'fy2027' => 2027,
+];
 
 // FY → 12 periode (Apr fy .. Mar fy+1)
 function fyToPeriodes(string $fy): array {
@@ -15,6 +18,16 @@ function fyToPeriodes(string $fy): array {
     for ($m = 4; $m <= 12; $m++) $periodes[] = sprintf('%d-%02d-01', $year, $m);
     for ($m = 1; $m <= 3;  $m++) $periodes[] = sprintf('%d-%02d-01', $year + 1, $m);
     return $periodes;
+}
+
+// Parse periode dari CSV: terima "YYYY-MM", "YYYY-MM-DD", "YYYY/MM" → "YYYY-MM-01"
+function parseItoPeriode(string $raw): ?string {
+    $raw = trim($raw);
+    if (preg_match('#^(\d{4})[-/.](\d{1,2})#', $raw, $m)) {
+        $y = (int) $m[1]; $mo = (int) $m[2];
+        if ($mo >= 1 && $mo <= 12) return sprintf('%04d-%02d-01', $y, $mo);
+    }
+    return null;
 }
 
 $alert = '';
@@ -61,6 +74,56 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save'])) {
     } else {
         $alert = "✓ $saved data berhasil disimpan untuk " . strtoupper($fy);
         $alert_type = 'success';
+    }
+}
+
+// ===== HANDLE UPLOAD CSV =====
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['upload'])) {
+    if (!isset($_FILES['csv']) || $_FILES['csv']['error'] !== UPLOAD_ERR_OK) {
+        $alert = '❌ File tidak valid atau tidak diupload.'; $alert_type = 'danger';
+    } elseif (strtolower(pathinfo($_FILES['csv']['name'], PATHINFO_EXTENSION)) !== 'csv') {
+        $alert = '❌ Format file harus CSV. Simpan Excel sebagai CSV dulu.'; $alert_type = 'danger';
+    } else {
+        $handle = fopen($_FILES['csv']['tmp_name'], 'r');
+        // Lewati header + deteksi delimiter (, atau ;)
+        $header = fgetcsv($handle, 1000, ',');
+        $delim  = ',';
+        if ($header && count($header) === 1) { rewind($handle); fgetcsv($handle, 1000, ';'); $delim = ';'; }
+
+        $stmt = $db->prepare("
+            INSERT INTO kpi_ito (periode, ito_days, inventory_amount)
+            VALUES (?, ?, ?)
+            ON DUPLICATE KEY UPDATE ito_days = VALUES(ito_days), inventory_amount = VALUES(inventory_amount)
+        ");
+
+        $saved = 0; $failed = 0; $first_error = '';
+        while (($row = fgetcsv($handle, 1000, $delim)) !== false) {
+            $periode = parseItoPeriode($row[0] ?? '');
+            if (!$periode) {
+                if (trim($row[0] ?? '') !== '') { $failed++; if ($first_error === '') $first_error = "Periode tidak valid: " . trim($row[0]); }
+                continue;
+            }
+            $days = trim($row[1] ?? '');
+            $amt  = trim($row[2] ?? '');
+            if ($days === '' && $amt === '') continue;
+            try {
+                $stmt->execute([$periode, $days !== '' ? (float) $days : null, $amt !== '' ? (float) $amt : null]);
+                $saved++;
+            } catch (Exception $e) {
+                $failed++;
+                if ($first_error === '') $first_error = $e->getMessage();
+            }
+        }
+        fclose($handle);
+
+        if ($saved === 0 && $failed === 0) {
+            $alert = '⚠️ Tidak ada data valid di file. Pastikan ada baris data di bawah header.'; $alert_type = 'danger';
+        } elseif ($failed > 0) {
+            $alert = "⚠️ $saved data berhasil, $failed data gagal" . ($first_error ? " — $first_error" : '');
+            $alert_type = 'danger';
+        } else {
+            $alert = "✓ $saved data berhasil diimport dari CSV."; $alert_type = 'success';
+        }
     }
 }
 
@@ -216,8 +279,25 @@ $pct_filled = round($filled / 12 * 100);
         <div class="alert-<?= $alert_type ?>"><?= $alert ?></div>
     <?php endif; ?>
 
+    <!-- Upload CSV -->
     <div class="card">
-        <div class="card-title">Input Data ITO</div>
+        <div class="card-title">📤 Upload Data (CSV)</div>
+        <div class="unit-note">
+            💡 Kolom: <strong>Periode (YYYY-MM)</strong>, <strong>ITO Days</strong>, <strong>Inventory Amount</strong>.
+            Satu baris = satu bulan. Bisa untuk banyak tahun sekaligus (mulai 2022).
+            Simpan Excel sebagai <strong>CSV</strong> sebelum upload.
+        </div>
+        <form method="POST" enctype="multipart/form-data" style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+            <input type="hidden" name="upload" value="1">
+            <input type="file" name="csv" accept=".csv" required
+                   style="font-size:12px; border:1px solid #e5e7eb; border-radius:8px; padding:7px; background:#fff;">
+            <button type="submit" class="btn-save" style="margin-top:0;">⬆️ Upload CSV</button>
+            <a href="ito_template.php" class="btn-cancel" style="margin-top:0; margin-left:0;">⬇️ Unduh Template</a>
+        </form>
+    </div>
+
+    <div class="card">
+        <div class="card-title">Input Data ITO (Manual per FY)</div>
 
         <!-- FY Tabs -->
         <div class="fy-tabs">

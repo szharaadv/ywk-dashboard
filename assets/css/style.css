@@ -1,3 +1,18 @@
+/* ===== Token tema (default = tampilan asli; tema override di assets/css/themes/*) ===== */
+:root {
+    --th-card: #ffffff;
+    --th-inset: #f4f5f7;
+    --th-text: #1a1a1a;
+    --th-muted: #6b7280;
+    --th-line: #e5e7eb;
+    --th-accent: #D0021B;
+    --th-accent-soft: #FDECEA;
+    --th-chart-text: #6b7280;
+    --th-chart-grid: #f0f0f0;
+    --th-chart-mode: light;
+    --th-capture-bg: #ffffff;
+}
+
 html, body {
     width: 100%;
     height: 100vh;

@@ -14,6 +14,7 @@ $current = max(1, min($total_slides, (int)($_GET['slide'] ?? 1)));
     <meta name="viewport" content="width=1920">
     <title>PPM Detail — YWK Dashboard</title>
     <link rel="stylesheet" href="../assets/css/style.css">
+    <link rel="stylesheet" href="../assets/css/themes/editorial.css">
     <style>
         ::-webkit-scrollbar { display: none; }
         html, body { height: 100vh; overflow: hidden; }

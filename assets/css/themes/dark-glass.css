@@ -1,0 +1,132 @@
+/* =====================================================================
+   THEME: DARK CONTROL-ROOM GLASS  ·  Yanmar Red accent
+   ---------------------------------------------------------------------
+   Cara ganti tema: di index.php ganti <link ... dark-glass.css>
+   dengan file tema lain. File ini self-contained (tidak mengubah style.css).
+   ===================================================================== */
+
+:root {
+    /* Token lintas-tema (dipakai inline/JS & chart) */
+    --th-card: rgba(255,255,255,0.05);
+    --th-inset: rgba(255,255,255,0.06);
+    --th-text: #e7ecf7;
+    --th-muted: #9aa6c0;
+    --th-line: rgba(255,255,255,0.14);
+    --th-accent: #ff2e49;
+    --th-accent-soft: rgba(255,46,73,0.16);
+    --th-chart-text: #9aa6c0;
+    --th-chart-grid: rgba(255,255,255,0.07);
+    --th-chart-mode: dark;
+    --th-capture-bg: #101629;
+
+    --t-accent:      #ff2e49;   /* merah Yanmar (dicerahkan utk latar gelap) */
+    --t-accent-soft: rgba(255,46,73,0.15);
+    --t-text:        #e7ecf7;   /* teks utama */
+    --t-muted:       #9aa6c0;   /* teks sekunder */
+    --t-faint:       #6b779a;   /* teks samar */
+    --t-line:        rgba(255,255,255,0.08);
+    --t-ok:          #4ade80;
+    --t-bad:         #ff6b7d;
+}
+
+/* ---- Base background: dark navy + red/blue glow ---- */
+body {
+    background:
+        radial-gradient(1100px 560px at 85% -12%, rgba(208,2,27,0.20), transparent 58%),
+        radial-gradient(900px 520px at -5% 112%, rgba(37,72,140,0.22), transparent 55%),
+        linear-gradient(165deg, #0a0f1e 0%, #0e1426 52%, #0a0e1c 100%) !important;
+    color: var(--t-text) !important;
+}
+.dashboard { color: var(--t-text); }
+
+/* ---- Topbar: glowing deep red ---- */
+.topbar {
+    background: linear-gradient(135deg, #4a0008 0%, #9d0016 55%, #c6001a 100%) !important;
+    box-shadow: 0 6px 28px rgba(208,2,27,0.35), inset 0 -1px 0 rgba(255,255,255,0.08);
+    border-bottom: 1px solid rgba(255,90,110,0.30);
+}
+.topbar-controls select {
+    background: rgba(255,255,255,0.14) !important;
+    color: #fff !important;
+    border: 1px solid rgba(255,255,255,0.25) !important;
+}
+.topbar-controls select:hover { background: rgba(255,255,255,0.22) !important; }
+
+/* hero KPI glass di topbar */
+.kpi-glass {
+    background: rgba(0,0,0,0.18) !important;
+    border: 1px solid rgba(255,255,255,0.20) !important;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.08);
+    backdrop-filter: blur(6px);
+}
+.kpi-glass:hover { background: rgba(0,0,0,0.28) !important; }
+
+/* ---- Glass cards ---- */
+.card {
+    background: linear-gradient(180deg, rgba(32,43,70,0.55), rgba(18,26,47,0.55)) !important;
+    border: 1px solid var(--t-line) !important;
+    border-radius: 14px !important;
+    box-shadow: 0 10px 34px rgba(0,0,0,0.40), inset 0 1px 0 rgba(255,255,255,0.05);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+}
+.card-title { color: #d7e0f5 !important; }
+.detail-link { color: var(--t-accent) !important; }
+.detail-link:hover { color: #ff6b7d !important; }
+
+/* ---- Info bar (live/top issues) ---- */
+.info-bar {
+    background: rgba(255,255,255,0.045) !important;
+    border: 1px solid var(--t-line) !important;
+    backdrop-filter: blur(8px);
+}
+.live-date  { color: var(--t-faint) !important; }
+.issues-label { color: var(--t-muted) !important; }
+.fy-label   { color: var(--t-faint) !important; }
+
+/* ---- Kaizen ---- */
+.ksb-label { background: var(--t-accent) !important; box-shadow: 0 0 16px rgba(255,46,73,0.5); }
+.ksb-stat  { color: var(--t-muted) !important; border-right-color: var(--t-line) !important; }
+.ksb-stat strong { color: var(--t-text) !important; }
+.ksb-stat .highlight { color: #5fe0a8 !important; }
+
+.kaizen-table thead tr { background: rgba(255,255,255,0.05) !important; }
+.kaizen-table th { color: var(--t-muted) !important; }
+.kaizen-table td { color: var(--t-text) !important; border-bottom-color: var(--t-line) !important; }
+.kaizen-table tbody tr:hover { background: rgba(255,255,255,0.04) !important; }
+.kaizen-table td.title-col { color: #7fb0ff !important; }
+.kaizen-table td.score-col { color: var(--t-text) !important; }
+
+/* status badges → translucent agar nyatu di gelap */
+.status-approved    { background: rgba(255,46,73,0.16) !important;  color: #ff8a98 !important; }
+.status-implemented { background: rgba(96,165,250,0.16) !important; color: #93c5fd !important; }
+.status-open        { background: rgba(245,158,11,0.16) !important; color: #fcd34d !important; }
+
+/* ---- Buttons / misc ---- */
+.ppm-btn {
+    background: rgba(255,255,255,0.08) !important;
+    border: 1px solid var(--t-line) !important;
+    color: #d7e0f5 !important;
+}
+.ppm-btn:hover { background: var(--t-accent) !important; border-color: var(--t-accent) !important; color:#fff !important; }
+
+/* ---- Elemen inline yang perlu diselaraskan ---- */
+#top-gaps span { background: rgba(255,46,73,0.16) !important; color: #ff8a98 !important; }
+.kaizen-table thead th { background: rgba(255,255,255,0.05) !important; }
+.content-wrapper select {
+    background: rgba(255,255,255,0.08) !important;
+    color: #e7ecf7 !important;
+    border: 1px solid var(--t-line) !important;
+}
+.content-wrapper select option { background: #141a2e; color: #e7ecf7; }
+#ito-capture { background: rgba(255,255,255,0.08) !important; border: 1px solid var(--t-line) !important; }
+#ito-capture:hover { background: var(--t-accent) !important; }
+
+/* ---- Metric cards (detail pages, kalau tema dipakai di sana) ---- */
+.metric-card {
+    background: linear-gradient(180deg, rgba(32,43,70,0.55), rgba(18,26,47,0.55)) !important;
+    border: 1px solid var(--t-line) !important;
+    box-shadow: 0 10px 34px rgba(0,0,0,0.40);
+}
+.metric-label { color: var(--t-muted) !important; }
+.metric-value { color: var(--t-text) !important; }

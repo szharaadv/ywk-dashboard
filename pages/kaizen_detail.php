@@ -14,6 +14,7 @@ $page_title = 'KAIZEN SHEET';
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Kaizen Detail — YWK Dashboard</title>
     <link rel="stylesheet" href="../assets/css/style.css">
+    <link rel="stylesheet" href="../assets/css/themes/editorial.css">
     <style>
         html, body { height:100vh; overflow:hidden; }
         .dashboard { height:100vh; display:flex; flex-direction:column; overflow:hidden; }
@@ -152,14 +153,14 @@ fetch('../api/kaizen_data.php' + API_QS)
             document.getElementById('k-top-banner').textContent =
                 `Top Kaizen: "${d.top_kaizen.judul}" — ${d.top_kaizen.pic} — Score ${d.top_kaizen.nilai}`;
         } else {
-            document.getElementById('k-top-banner').textContent = 'Belum ada data kaizen';
+            document.getElementById('k-top-banner').textContent = 'No kaizen data yet';
         }
 
         document.getElementById('k-count').textContent = d.list.length + ' kaizen ditampilkan';
 
         const tbody = document.getElementById('k-tbody');
         if (!d.list || d.list.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:#9ca3af;padding:2rem;">Belum ada data</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:#9ca3af;padding:2rem;">No data yet</td></tr>';
             return;
         }
 
@@ -200,7 +201,7 @@ fetch('../api/kaizen_data.php' + API_QS)
     })
     .catch(() => {
         document.getElementById('k-tbody').innerHTML =
-            '<tr><td colspan="8" style="text-align:center;color:#9ca3af;padding:2rem;">Gagal memuat data</td></tr>';
+            '<tr><td colspan="8" style="text-align:center;color:#9ca3af;padding:2rem;">Failed to load data</td></tr>';
     });
 </script>
 </body>

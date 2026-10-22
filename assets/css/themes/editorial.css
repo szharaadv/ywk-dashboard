@@ -1,0 +1,103 @@
+/* =====================================================================
+   THEME: EDITORIAL EXECUTIVE  ·  kertas hangat + merah klasik + serif
+   ---------------------------------------------------------------------
+   Ganti tema: cukup ubah <link ...editorial.css> di index.php.
+   Warna elemen dinamis dikendalikan lewat token --th-* di bawah.
+   ===================================================================== */
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&display=swap');
+
+:root {
+    --th-card: #ffffff;
+    --th-inset: #f1eee6;
+    --th-text: #20242a;
+    --th-muted: #8a8578;
+    --th-line: #e7e1d4;
+    --th-accent: #a3122b;
+    --th-accent-soft: #f3e4e6;
+    --th-chart-text: #8a8578;
+    --th-chart-grid: #efebe0;
+    --th-chart-mode: light;
+    --th-capture-bg: #ffffff;
+    --th-serif: 'Playfair Display', Georgia, 'Times New Roman', serif;
+}
+
+/* ---- Page ---- */
+body { background: #f6f3ec !important; color: var(--th-text) !important; }
+
+/* ---- Topbar: charcoal + garis merah klasik ---- */
+.topbar {
+    background: #1e2024 !important;
+    border-bottom: 3px solid var(--th-accent) !important;
+    box-shadow: 0 2px 12px rgba(30,20,10,0.10);
+}
+.topbar-title { font-family: var(--th-serif); font-size: 18px; letter-spacing: 0.01em; }
+.topbar-subtitle { color: rgba(255,255,255,0.45) !important; }
+.topbar-controls select {
+    background: rgba(255,255,255,0.12) !important; color: #fff !important;
+    border: 1px solid rgba(255,255,255,0.22) !important;
+}
+.kpi-glass {
+    background: rgba(255,255,255,0.06) !important;
+    border: 1px solid rgba(255,255,255,0.14) !important;
+}
+.kpi-glass:hover { background: rgba(255,255,255,0.12) !important; }
+.kpi-glass-value { font-family: var(--th-serif); }
+.kpi-glass-sub .ok  { color: #8fd3a0 !important; }
+.kpi-glass-sub .bad { color: #e9a6ac !important; }
+
+/* ---- Cards ---- */
+.card {
+    background: var(--th-card) !important;
+    border: 1px solid var(--th-line) !important;
+    border-radius: 10px !important;
+    box-shadow: 0 1px 3px rgba(40,30,15,0.05);
+}
+.card-title { font-family: var(--th-serif); color: var(--th-text) !important; letter-spacing: 0.02em; }
+.detail-link { color: var(--th-accent) !important; }
+
+/* ---- Info bar ---- */
+.info-bar { background: var(--th-card) !important; border: 1px solid var(--th-line) !important; }
+.live-date { color: var(--th-muted) !important; }
+.issues-label { color: var(--th-muted) !important; }
+.fy-label { color: var(--th-muted) !important; }
+#top-gaps span { background: var(--th-accent-soft) !important; color: var(--th-accent) !important; }
+
+/* ---- Kaizen ---- */
+.ksb-label { background: var(--th-accent) !important; }
+.ksb-stat { color: var(--th-muted) !important; border-right-color: var(--th-line) !important; }
+.ksb-stat strong { color: var(--th-text) !important; }
+.ksb-stat .highlight { color: #4b7b38 !important; }
+.kaizen-table thead tr, .kaizen-table thead th { background: var(--th-inset) !important; }
+.kaizen-table th { color: var(--th-muted) !important; }
+.kaizen-table td { color: var(--th-text) !important; border-bottom-color: var(--th-line) !important; }
+.kaizen-table tbody tr:hover { background: #faf8f2 !important; }
+.kaizen-table td.title-col { color: #3a3f47 !important; font-weight: 600; }
+.kaizen-table td.score-col { color: var(--th-text) !important; }
+.status-approved    { background: var(--th-accent-soft) !important; color: var(--th-accent) !important; }
+.status-implemented { background: #ece9e0 !important; color: #6b6258 !important; }
+.status-open        { background: #faeeda !important; color: #854f0b !important; }
+
+/* ---- Buttons ---- */
+.ppm-btn { background: var(--th-inset) !important; border: 1px solid var(--th-line) !important; color: var(--th-text) !important; }
+.ppm-btn:hover { background: var(--th-accent) !important; border-color: var(--th-accent) !important; color: #fff !important; }
+.content-wrapper select { background: var(--th-card) !important; color: var(--th-text) !important; border: 1px solid var(--th-line) !important; }
+#ito-capture { background: var(--th-inset) !important; border: 1px solid var(--th-line) !important; }
+#ito-capture:hover { background: var(--th-accent) !important; }
+
+/* ---- Metric cards (detail pages) ---- */
+.metric-card { background: var(--th-card) !important; border: 1px solid var(--th-line) !important; }
+.metric-value { font-family: var(--th-serif); color: var(--th-text) !important; }
+.metric-label { color: var(--th-muted) !important; }
+
+/* ---- Detail pages: tabs, dropdown, badge, winner card ---- */
+select { background: var(--th-card); color: var(--th-text); border: 1px solid var(--th-line); }
+.topbar-controls select { background: rgba(255,255,255,0.12) !important; color: #fff !important; }
+.tab-nav { background: var(--th-card) !important; border: 1px solid var(--th-line) !important; }
+.tab-item { color: var(--th-muted) !important; }
+.tab-item:hover { background: var(--th-inset) !important; color: var(--th-text) !important; }
+.tab-item.active { background: var(--th-accent) !important; color: #fff !important; }
+.badge-blue  { background: var(--th-accent-soft) !important; color: var(--th-accent) !important; }
+.badge-gray  { background: var(--th-inset) !important; color: var(--th-muted) !important; }
+.winner-card { background: var(--th-card) !important; border-color: var(--th-line) !important; }
+.winner-card-no-img { background: var(--th-inset) !important; }
+.prod-line-card { background: var(--th-card) !important; border-color: var(--th-line) !important; }

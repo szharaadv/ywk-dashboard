@@ -11,6 +11,7 @@ $page_title = 'YWK EVENT';
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>YWK Event — Dashboard</title>
     <link rel="stylesheet" href="../assets/css/style.css">
+    <link rel="stylesheet" href="../assets/css/themes/editorial.css">
     <style>
         /* Override global overflow untuk halaman ini */
         html, body { overflow:auto !important; height:auto !important; min-height:100vh; }
@@ -95,13 +96,29 @@ $page_title = 'YWK EVENT';
         .participant-dept  { font-size:10px; color:#6b7280; }
         .participant-count { font-size:9px; color:#9ca3af; margin-top:4px; }
 
-        @media (max-width: 1024px) {
-            #ev-winner-grid { grid-template-columns:repeat(auto-fit,minmax(150px,1fr)) !important; }
+        /* ===== GALLERY SPLIT (YWKS | YGP Internal) ===== */
+        .gallery-sub-title {
+            display:flex; align-items:center; justify-content:space-between;
+            font-size:12px; font-weight:700; color:var(--th-text,#1a1a1a);
+            text-transform:uppercase; letter-spacing:0.06em;
+            padding-bottom:8px; margin-bottom:12px;
+            border-bottom:2px solid var(--th-accent,#D0021B);
+        }
+        .gallery-sub-count { font-size:10px; font-weight:600; color:var(--th-muted,#6b7280); letter-spacing:0; }
+        .winner-sub-grid {
+            display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr));
+            gap:14px; grid-auto-flow:dense;
+        }
+        .winner-empty { grid-column:1/-1; text-align:center; color:#9ca3af; padding:1.5rem; font-size:12px; }
+
+        @media (max-width: 1100px) {
+            #ev-gallery-split { grid-template-columns:1fr !important; }
+            #ev-gallery-split > div:nth-child(2) { display:none; }
             .metrics-row    { grid-template-columns:repeat(2,1fr) !important; }
         }
         @media (max-width: 640px) {
-            #ev-winner-grid { grid-template-columns:1fr !important; }
-            .metrics-row    { grid-template-columns:1fr !important; gap:8px !important; }
+            .winner-sub-grid { grid-template-columns:1fr !important; }
+            .metrics-row     { grid-template-columns:1fr !important; gap:8px !important; }
         }
     </style>
 </head>
@@ -119,12 +136,12 @@ $page_title = 'YWK EVENT';
 
                 <select id="f-tahun" onchange="applyEventFilter()"
                     style="font-size:12px;border:1px solid #e5e7eb;border-radius:6px;padding:5px 10px;cursor:pointer;">
-                    <option value="">Semua Tahun</option>
+                    <option value="">All Years</option>
                 </select>
 
                 <select id="f-section" onchange="filterBySection()"
                     style="font-size:12px;border:1px solid #e5e7eb;border-radius:6px;padding:5px 10px;cursor:pointer;">
-                    <option value="">Semua Section</option>
+                    <option value="">All Sections</option>
                     <option value="MS1">MS1</option>
                     <option value="MS2">MS2</option>
                     <option value="Conrod">Conrod</option>
@@ -133,7 +150,7 @@ $page_title = 'YWK EVENT';
 
                 <select id="f-rank" onchange="filterByRank()"
                     style="font-size:12px;border:1px solid #e5e7eb;border-radius:6px;padding:5px 10px;cursor:pointer;">
-                    <option value="">Semua Ranking</option>
+                    <option value="">All Rankings</option>
                     <option value="1">🥇 1st Winner</option>
                     <option value="2">🥈 2nd Winner</option>
                     <option value="3">🥉 3rd Winner</option>
@@ -151,7 +168,7 @@ $page_title = 'YWK EVENT';
                 <div class="metric-sub">Competed</div>
             </div>
             <div class="metric-card">
-                <div class="metric-label">Participates</div>
+                <div class="metric-label">Participants</div>
                 <div class="metric-value" id="ev-total-dept">—</div>
                 <div class="metric-sub">Participating</div>
             </div>
@@ -170,7 +187,7 @@ $page_title = 'YWK EVENT';
         <!-- Participants -->
         <div class="card">
             <div class="card-header">
-                <div class="card-title">Peserta Aktif</div>
+                <div class="card-title">Active Participants</div>
                 <span id="ev-participant-counter" style="font-size:11px;color:#6b7280;"></span>
             </div>
             <div id="ev-participant-grid"
@@ -182,12 +199,33 @@ $page_title = 'YWK EVENT';
         <!-- Gallery -->
         <div class="card">
             <div class="card-header">
-                <div class="card-title">Gallery & Pemenang</div>
+                <div class="card-title">Gallery & Winners</div>
                 <span id="ev-gallery-counter" style="font-size:11px;color:#6b7280;"></span>
             </div>
-            <div id="ev-winner-grid"
-                 style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:15px;grid-auto-flow:dense;">
-                <div style="grid-column:1/-1;text-align:center;color:#9ca3af;padding:2rem;font-size:13px;">Loading...</div>
+            <div id="ev-gallery-split"
+                 style="display:grid;grid-template-columns:1fr 1px 1fr;gap:18px;align-items:start;">
+                <!-- Kolom kiri: YWKS -->
+                <div>
+                    <div class="gallery-sub-title">
+                        <span>YWKS</span>
+                        <span id="ev-count-ywks" class="gallery-sub-count"></span>
+                    </div>
+                    <div id="ev-winner-grid-ywks" class="winner-sub-grid">
+                        <div class="winner-empty">Loading...</div>
+                    </div>
+                </div>
+                <!-- Pembatas -->
+                <div style="align-self:stretch;background:var(--th-line,#e5e7eb);"></div>
+                <!-- Kolom kanan: YGP Internal -->
+                <div>
+                    <div class="gallery-sub-title">
+                        <span>YGP Internal</span>
+                        <span id="ev-count-yjp" class="gallery-sub-count"></span>
+                    </div>
+                    <div id="ev-winner-grid-yjp" class="winner-sub-grid">
+                        <div class="winner-empty">Loading...</div>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -232,9 +270,9 @@ fetch('../api/event_data.php' + API_QS)
         const pGrid = document.getElementById('ev-participant-grid');
         const pList = Object.values(participants);
         if (pList.length === 0) {
-            pGrid.innerHTML = '<div style="grid-column:1/-1;text-align:center;color:#9ca3af;padding:1rem;">Belum ada peserta</div>';
+            pGrid.innerHTML = '<div style="grid-column:1/-1;text-align:center;color:#9ca3af;padding:1rem;">No participants yet</div>';
         } else {
-            document.getElementById('ev-participant-counter').textContent = pList.length + ' peserta';
+            document.getElementById('ev-participant-counter').textContent = pList.length + ' participants';
             const colors = ['#667eea','#764ba2','#f093fb','#4facfe','#00f2fe','#43e97b','#fa709a','#fee140'];
             pGrid.innerHTML = pList.map(p => {
                 const initials = p.name.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);
@@ -261,22 +299,16 @@ fetch('../api/event_data.php' + API_QS)
         document.getElementById('ev-total-materi').textContent = d.total_materi ?? '—';
         document.getElementById('ev-total-dept').textContent   = d.total_dept   ?? '—';
         document.getElementById('ev-tahun').textContent        = CURRENT_TAHUN || (d.years[0] ?? '—');
-        document.getElementById('ev-count').textContent        = d.list.length + ' materi';
+        document.getElementById('ev-count').textContent        = d.list.length + ' materials';
         if (d.winner) {
             document.getElementById('ev-winner-name').textContent = d.winner.judul_materi ?? '—';
             document.getElementById('ev-winner-dept').textContent = d.winner.departemen   ?? '—';
         }
 
-        // Gallery
-        const wGrid = document.getElementById('ev-winner-grid');
-        if (!d.list || !d.list.length) {
-            wGrid.innerHTML = '<div style="grid-column:1/-1;text-align:center;color:#9ca3af;padding:2rem;">Belum ada data event</div>';
-            return;
-        }
+        // Gallery — dipisah YWKS (kiri) & YGP Internal (kanan)
+        document.getElementById('ev-gallery-counter').textContent = d.list.length + ' materials';
 
-        document.getElementById('ev-gallery-counter').textContent = d.list.length + ' materi';
-
-        wGrid.innerHTML = d.list.map(ev => {
+        function buildWinnerCard(ev) {
             const { text, cls, badgeCls } = getRankInfo(ev.peringkat);
             const rankIcon = ev.peringkat==1?'🥇':ev.peringkat==2?'🥈':ev.peringkat==3?'🥉':'';
             const imgHtml  = ev.foto
@@ -284,7 +316,6 @@ fetch('../api/event_data.php' + API_QS)
                         onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
                    <div class="winner-card-no-img" style="display:none;">📷</div>`
                 : `<div class="winner-card-no-img">📷</div>`;
-
             return `<div class="winner-card ${cls}" data-rank="${ev.peringkat}" data-section="${ev.departemen??''}">
                 ${rankIcon?`<div class="ranking-ribbon rank-${ev.peringkat}">${rankIcon}</div>`:''}
                 ${imgHtml}
@@ -296,27 +327,43 @@ fetch('../api/event_data.php' + API_QS)
                     ${ev.deskripsi?`<div class="winner-meta" style="margin-top:4px;color:#9ca3af;font-size:10px;">${ev.deskripsi}</div>`:''}
                 </div>
             </div>`;
-        }).join('');
+        }
+
+        const listYjp  = d.list.filter(ev => (ev.jenis_event || '').toUpperCase() === 'YJP');
+        const listYwks = d.list.filter(ev => (ev.jenis_event || '').toUpperCase() !== 'YJP');
+
+        const gridYwks = document.getElementById('ev-winner-grid-ywks');
+        const gridYjp  = document.getElementById('ev-winner-grid-yjp');
+
+        gridYwks.innerHTML = listYwks.length
+            ? listYwks.map(buildWinnerCard).join('')
+            : '<div class="winner-empty">No YWKS data yet</div>';
+        gridYjp.innerHTML = listYjp.length
+            ? listYjp.map(buildWinnerCard).join('')
+            : '<div class="winner-empty">No YGP Internal data yet</div>';
+
+        document.getElementById('ev-count-ywks').textContent = listYwks.length + ' materials';
+        document.getElementById('ev-count-yjp').textContent  = listYjp.length + ' materials';
     })
     .catch(() => {
-        document.getElementById('ev-winner-grid').innerHTML =
-            '<div style="grid-column:1/-1;text-align:center;color:#9ca3af;padding:2rem;">Gagal memuat data</div>';
+        const msg = '<div class="winner-empty">Failed to load data</div>';
+        document.getElementById('ev-winner-grid-ywks').innerHTML = msg;
+        document.getElementById('ev-winner-grid-yjp').innerHTML  = msg;
     });
 
 function filterBySection() { applyFilters(document.getElementById('f-section').value, document.getElementById('f-rank').value); }
 function filterByRank()    { applyFilters(document.getElementById('f-section').value, document.getElementById('f-rank').value); }
 
 function applyFilters(section='', rank='') {
-    const wGrid = document.getElementById('ev-winner-grid');
     let visible = 0;
-    Array.from(wGrid.querySelectorAll('.winner-card')).forEach(card => {
+    document.querySelectorAll('#ev-gallery-split .winner-card').forEach(card => {
         let show = true;
         if (rank    && card.getAttribute('data-rank')    !== rank)      show = false;
         if (section && !(card.getAttribute('data-section')||'').includes(section)) show = false;
         card.style.display = show ? 'flex' : 'none';
         if (show) visible++;
     });
-    document.getElementById('ev-count').textContent = visible + ' materi';
+    document.getElementById('ev-count').textContent = visible + ' materials';
 }
 </script>
 </body>

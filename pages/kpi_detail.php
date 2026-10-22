@@ -22,6 +22,7 @@ $page_title = 'KPI DETAIL — ' . strtoupper($kpi_tabs[$active_kpi]);
     <meta name="viewport" content="width=1920">
     <title>KPI Detail — YWK Dashboard</title>
     <link rel="stylesheet" href="../assets/css/style.css">
+    <link rel="stylesheet" href="../assets/css/themes/editorial.css">
     <script src="https://cdn.jsdelivr.net/npm/apexcharts@3.45.2/dist/apexcharts.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
@@ -221,7 +222,7 @@ $page_title = 'KPI DETAIL — ' . strtoupper($kpi_tabs[$active_kpi]);
             <div class="line-filter-wrap" id="lineFilterWrap" style="display:none">
                 <label>LINE:</label>
                 <select id="lineFilter" onchange="onLineChange()">
-                    <option value="">— Semua Line —</option>
+                    <option value="">— All Lines —</option>
                 </select>
             </div>
 
@@ -379,7 +380,7 @@ function fmtKpi(val,kpi) {
     if (val===null||val===undefined) return '—';
     if (kpi==='fcost')           return val.toFixed(2)+'%';
     if (kpi==='operation_ratio') return val+'%';
-    if (kpi==='quality')         return Number(val).toLocaleString('id-ID')+' PPM';
+    if (kpi==='quality')         return Number(val).toLocaleString('en-US')+' PPM';
     if (kpi==='safety')          return val+' case';
     return val;
 }
@@ -387,7 +388,7 @@ function getSubLabel(actual,target,kpi) {
     if (actual===null||actual===undefined) return '';
     if (kpi==='safety')
         return actual===0?'<span style="color:#3B6D11">✓ No accident</span>'
-                         :'<span style="color:#D0021B">⚠ Ada insiden</span>';
+                         :'<span style="color:#D0021B">⚠ Incident</span>';
     if (kpi==='fcost'||kpi==='quality')
         return actual<=target?'<span style="color:#3B6D11">Di bawah batas</span>'
                              :'<span style="color:#D0021B">Melebihi batas</span>';
@@ -399,13 +400,13 @@ function getSubLabel(actual,target,kpi) {
 function getTrendLabel(cur,prev,kpi) {
     if (cur===null||prev===null) return '';
     const diff=cur-prev;
-    if (diff===0) return `<span style="color:#6b7280">0 vs bulan lalu</span>`;
+    if (diff===0) return `<span style="color:#6b7280">0 vs last month</span>`;
     const isGood=(kpi==='fcost'||kpi==='quality')?diff<0:diff>0;
     const color=isGood?'#3B6D11':'#D0021B', sign=diff>0?'+':'';
     let diffStr='';
     if (kpi==='fcost')                diffStr=sign+diff.toFixed(2)+'%';
     else if (kpi==='operation_ratio') diffStr=sign+diff.toFixed(1)+'%';
-    else if (kpi==='quality')         diffStr=sign+Math.round(diff).toLocaleString('id-ID')+' PPM';
+    else if (kpi==='quality')         diffStr=sign+Math.round(diff).toLocaleString('en-US')+' PPM';
     else if (kpi==='safety')          diffStr=sign+Math.round(diff)+' case';
     else                              diffStr=sign+diff;
     return `<span style="color:${color};font-weight:700;">${diffStr}</span>`;
@@ -457,7 +458,7 @@ function onKpiChange() {
     if (activeKpi !== 'productivity_passrate') {
         allLocations = [];
         selectedLineId = '';
-        document.getElementById('lineFilter').innerHTML = '<option value="">— Semua Line —</option>';
+        document.getElementById('lineFilter').innerHTML = '<option value="">— All Lines —</option>';
     }
 
     // Update button styles
@@ -740,7 +741,7 @@ async function loadProductivity() {
         if (!allLocations.length) {
             allLocations = await fetchLocations();
             const sel=document.getElementById('lineFilter');
-            sel.innerHTML='<option value="">— Semua Line —</option>';
+            sel.innerHTML='<option value="">— All Lines —</option>';
             allLocations.forEach(loc=>{
                 sel.innerHTML+=`<option value="${loc.id}">${escH(loc.name)}</option>`;
             });
@@ -752,7 +753,7 @@ async function loadProductivity() {
         if (!rows || !rows.length) {
             document.getElementById('errorBanner').style.display='block';
             document.getElementById('errorBanner').textContent=
-                '📭 Data productivity tidak tersedia. Pastikan server productivity-ms.yadin.com accessible.';
+                '📭 Productivity data unavailable. Make sure productivity-ms.yadin.com is reachable.';
             // Render empty state per card
             for (const loc of allLocations) {
                 const lid=String(loc.id);
@@ -760,7 +761,7 @@ async function loadProductivity() {
                 if(!sid) continue;
                 setupProdFill(lid, sid, loc.name);
                 const fill=document.getElementById('chartfill-'+sid);
-                if(fill) fill.innerHTML='<div style="text-align:center;color:#9ca3af;padding:20px;font-size:11px;">⏳ Data tidak tersedia</div>';
+                if(fill) fill.innerHTML='<div style="text-align:center;color:#9ca3af;padding:20px;font-size:11px;">⏳ Data unavailable</div>';
             }
             return;
         }
@@ -803,7 +804,7 @@ async function loadProductivity() {
             if(!scrollWrap) continue;
 
             if(!lineNames.length) {
-                scrollWrap.innerHTML='<div style="text-align:center;color:#9ca3af;padding:16px;font-size:11px;">📭 Tidak ada data</div>';
+                scrollWrap.innerHTML='<div style="text-align:center;color:#9ca3af;padding:16px;font-size:11px;">📭 No data</div>';
                 continue;
             }
 
@@ -871,7 +872,7 @@ async function loadProductivity() {
 
     } catch(e) {
         document.getElementById('errorBanner').style.display='block';
-        document.getElementById('errorBanner').textContent='⚠ Gagal memuat data: '+e.message;
+        document.getElementById('errorBanner').textContent='⚠ Failed to load data: '+e.message;
         console.error(e);
     }
 }
@@ -999,8 +1000,8 @@ function makeKpiChartOpts(kpi,datasets) {
                 const v=ctx.parsed.y, l=ctx.dataset.label??'';
                 if(kpi==='fcost')           return ` ${l}: ${v?.toFixed(2)}%`;
                 if(kpi==='operation_ratio') return ` ${l}: ${v}%`;
-                if(kpi==='quality')         return ` ${l}: ${Number(v).toLocaleString('id-ID')} PPM`;
-                return ` ${l}: ${Number(v).toLocaleString('id-ID')}`;
+                if(kpi==='quality')         return ` ${l}: ${Number(v).toLocaleString('en-US')} PPM`;
+                return ` ${l}: ${Number(v).toLocaleString('en-US')}`;
             }}}
         },
         scales:{
@@ -1011,7 +1012,7 @@ function makeKpiChartOpts(kpi,datasets) {
                 ticks:{font:{size:9},callback:v=>{
                     if(kpi==='fcost')           return v?.toFixed(2)+'%';
                     if(kpi==='operation_ratio') return v+'%';
-                    if(kpi==='quality')         return Number(v).toLocaleString('id-ID');
+                    if(kpi==='quality')         return Number(v).toLocaleString('en-US');
                     return v;
                 }},
                 grid:{color:'#f0f0f0'}
@@ -1035,8 +1036,8 @@ function fillKpiTable(json,section,kpi) {
         if(v===null||v===undefined) return '<span style="color:#d1d5db">—</span>';
         if(k==='operation_ratio') return v.toFixed(1)+'%';
         if(k==='fcost_pct')       return v.toFixed(2)+'%';
-        if(k==='fcost_nominal')   return 'Rp'+Number(v).toLocaleString('id-ID');
-        if(k==='quality')         return Number(v).toLocaleString('id-ID');
+        if(k==='fcost_nominal')   return 'Rp'+Number(v).toLocaleString('en-US');
+        if(k==='quality')         return Number(v).toLocaleString('en-US');
         return v;
     };
     const mkRow=(lbl,arr,dot,bold=false,ok=null)=>{
@@ -1132,7 +1133,7 @@ async function loadKpi() {
         });
     } catch(e) {
         document.getElementById('errorBanner').style.display='block';
-        document.getElementById('errorBanner').textContent='⚠ Gagal memuat data: '+e.message;
+        document.getElementById('errorBanner').textContent='⚠ Failed to load data: '+e.message;
         console.error(e);
     }
 }

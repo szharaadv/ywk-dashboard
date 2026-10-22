@@ -17,7 +17,7 @@ if ($tahun) {
 
 // List semua materi
 $stmt = $db->prepare("
-    SELECT id, tahun, judul_materi, peserta, departemen,
+    SELECT id, tahun, jenis_event, judul_materi, peserta, departemen,
            peringkat, foto, deskripsi
     FROM ywk_event
     $where

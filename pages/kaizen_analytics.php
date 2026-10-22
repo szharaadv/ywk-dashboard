@@ -15,6 +15,7 @@ $cur_month = (int)date('n');
     <meta name="viewport" content="width=1920">
     <title>Kaizen Analytics — YWK Dashboard</title>
     <link rel="stylesheet" href="../assets/css/style.css">
+    <link rel="stylesheet" href="../assets/css/themes/editorial.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
     <style>
@@ -182,7 +183,7 @@ $cur_month = (int)date('n');
             <!-- Awareness Ratio -->
             <div class="ka-chart-card">
                 <div class="ka-chart-header">
-                    <div class="ka-chart-title">Awareness Ratio <span class="ka-chart-sub">*Klik dept untuk detail</span></div>
+                    <div class="ka-chart-title">Awareness Ratio <span class="ka-chart-sub">*Click dept for details</span></div>
                 </div>
                 <div class="ka-chart-wrap"><canvas id="kaChartAwareness"></canvas></div>
             </div>
@@ -214,10 +215,10 @@ $cur_month = (int)date('n');
 
         </div>
 
-        <!-- Data Detail Kaizen Table -->
+        <!-- Kaizen Detail Data Table -->
         <div class="ka-table-card">
             <div class="ka-table-header">
-                <div class="ka-table-header-title">Data Detail Kaizen</div>
+                <div class="ka-table-header-title">Kaizen Detail Data</div>
             </div>
             <div class="ka-table-scroll">
                 <table class="ka-detail-table">
@@ -245,16 +246,16 @@ $cur_month = (int)date('n');
 <div class="ka-modal-overlay" id="kaModalDept">
     <div class="ka-modal">
         <div class="ka-modal-header">
-            <div class="ka-modal-title" id="kaModalDeptTitle">DETAIL KARYAWAN</div>
+            <div class="ka-modal-title" id="kaModalDeptTitle">EMPLOYEE DETAILS</div>
             <button class="ka-modal-close" onclick="closeModal('kaModalDept')">✕</button>
         </div>
         <div class="ka-modal-rekap">
             <div class="ka-modal-rekap-item">
-                <div class="ka-modal-rekap-label">Jumlah Karyawan</div>
+                <div class="ka-modal-rekap-label">Number of Employees</div>
                 <div class="ka-modal-rekap-val" id="kaModalDeptTotal">—</div>
             </div>
             <div class="ka-modal-rekap-item">
-                <div class="ka-modal-rekap-label">Karyawan Ikut</div>
+                <div class="ka-modal-rekap-label">Employees Joined</div>
                 <div class="ka-modal-rekap-val" id="kaModalDeptIkut" style="color:#D0021B;">—</div>
             </div>
             <div class="ka-modal-rekap-item">
@@ -264,7 +265,7 @@ $cur_month = (int)date('n');
         </div>
         <div class="ka-modal-body">
             <table class="ka-modal-table">
-                <thead><tr><th style="width:60px;">Rank</th><th>Nama Karyawan</th><th style="text-align:center;">Kontribusi</th></tr></thead>
+                <thead><tr><th style="width:60px;">Rank</th><th>Employee Name</th><th style="text-align:center;">Contribution</th></tr></thead>
                 <tbody id="kaModalDeptTbody"></tbody>
             </table>
         </div>
@@ -275,12 +276,12 @@ $cur_month = (int)date('n');
 <div class="ka-modal-overlay" id="kaModalTopPerf">
     <div class="ka-modal">
         <div class="ka-modal-header">
-            <div class="ka-modal-title">TOP PERFORMANCE — SEMUA KARYAWAN</div>
+            <div class="ka-modal-title">TOP PERFORMANCE — ALL EMPLOYEES</div>
             <button class="ka-modal-close" onclick="closeModal('kaModalTopPerf')">✕</button>
         </div>
         <div class="ka-modal-rekap">
             <div class="ka-modal-rekap-item">
-                <div class="ka-modal-rekap-label">Total Karyawan Submit</div>
+                <div class="ka-modal-rekap-label">Total Employees Submitted</div>
                 <div class="ka-modal-rekap-val" id="perfTotalSubmit" style="color:#D0021B;">—</div>
             </div>
             <div class="ka-modal-rekap-item">
@@ -288,13 +289,13 @@ $cur_month = (int)date('n');
                 <div class="ka-modal-rekap-val" id="perfTotalSubmisi">—</div>
             </div>
             <div class="ka-modal-rekap-item">
-                <div class="ka-modal-rekap-label">Total Nilai</div>
+                <div class="ka-modal-rekap-label">Total Score</div>
                 <div class="ka-modal-rekap-val" id="perfTotalNilai" style="color:#22c55e;">—</div>
             </div>
         </div>
         <div class="ka-modal-body">
             <table class="ka-modal-table">
-                <thead><tr><th style="width:60px;">Rank</th><th>Nama Karyawan</th><th style="text-align:center;">Jumlah Submit</th><th style="text-align:center;">Total Nilai</th></tr></thead>
+                <thead><tr><th style="width:60px;">Rank</th><th>Employee Name</th><th style="text-align:center;">Submissions</th><th style="text-align:center;">Total Score</th></tr></thead>
                 <tbody id="kaModalTopPerfTbody"></tbody>
             </table>
         </div>
@@ -427,7 +428,7 @@ function renderTopIdea(employee) {
     const values = (employee?.values ?? []).slice(0,5);
 
     if (!labels.length) {
-        wrapEl.innerHTML = '<div style="text-align:center;color:#9ca3af;padding:40px;font-size:12px;">Belum ada data</div>';
+        wrapEl.innerHTML = '<div style="text-align:center;color:#9ca3af;padding:40px;font-size:12px;">No data yet</div>';
         return;
     }
 
@@ -472,7 +473,7 @@ function renderTopPerformance(tp) {
     if (!ctx) return;
 
     if (!tp || !tp.labels || !tp.labels.length) {
-        wrapEl.innerHTML = '<div style="text-align:center;color:#9ca3af;padding:40px;font-size:12px;">Belum ada data</div>';
+        wrapEl.innerHTML = '<div style="text-align:center;color:#9ca3af;padding:40px;font-size:12px;">No data yet</div>';
         return;
     }
 
@@ -490,7 +491,7 @@ function renderTopPerformance(tp) {
                 legend:{ display:false },
                 tooltip:{ callbacks:{
                     title: items => labels[items[0].dataIndex],
-                    label: item  => [`Total Nilai: ${values[item.dataIndex]}`, `Jumlah Submit: ${submissions[item.dataIndex] ?? '—'}x`]
+                    label: item  => [`Total Score: ${values[item.dataIndex]}`, `Submissions: ${submissions[item.dataIndex] ?? '—'}x`]
                 }},
                 datalabels: { anchor:'start', align:'end', color:'#fff', font:{weight:'bold',size:10}, rotation:-90, formatter:(v,ctx) => ctx.chart.data.labels[ctx.dataIndex] }
             }
@@ -517,7 +518,7 @@ function renderDetailTable(list) {
     const tbody = document.getElementById('kaDetailTbody');
     if (!tbody) return;
     if (!list || !list.length) {
-        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:16px;color:#9ca3af;">Belum ada data kaizen bulan ini</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:16px;color:#9ca3af;">No kaizen data this month</td></tr>';
         return;
     }
     tbody.innerHTML = list.map((item, i) => {
@@ -556,7 +557,7 @@ async function openModalDept(deptName) {
 
         const tbody = document.getElementById('kaModalDeptTbody');
         if (!d.karyawan || !d.karyawan.length) {
-            tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;padding:20px;color:#9ca3af;">Belum ada data</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;padding:20px;color:#9ca3af;">No data yet</td></tr>';
             return;
         }
         tbody.innerHTML = d.karyawan.map((k, i) => `
@@ -566,7 +567,7 @@ async function openModalDept(deptName) {
                 <td style="text-align:center;font-weight:700;">${k.total_kaizen} Lembar</td>
             </tr>`).join('');
     } catch(e) {
-        document.getElementById('kaModalDeptTbody').innerHTML = '<tr><td colspan="3" style="text-align:center;padding:20px;color:#dc2626;">⚠ Gagal memuat</td></tr>';
+        document.getElementById('kaModalDeptTbody').innerHTML = '<tr><td colspan="3" style="text-align:center;padding:20px;color:#dc2626;">⚠ Failed to load</td></tr>';
     }
 }
 
@@ -577,7 +578,7 @@ function openModalTopPerf() {
     const tbody = document.getElementById('kaModalTopPerfTbody');
 
     if (!masterTopPerf || !masterTopPerf.labels || !masterTopPerf.labels.length) {
-        tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:20px;color:#9ca3af;">Belum ada data</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:20px;color:#9ca3af;">No data yet</td></tr>';
         document.getElementById('perfTotalSubmit').textContent  = '0';
         document.getElementById('perfTotalSubmisi').textContent = '0';
         document.getElementById('perfTotalNilai').textContent   = '0';

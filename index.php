@@ -18,6 +18,8 @@ $ppm_total = count(array_filter(
     <meta name="viewport" content="width=1920">
     <title>YWK Dashboard</title>
     <link rel="stylesheet" href="assets/css/style.css">
+    <!-- ===== TEMA aktif — ganti file ini untuk rotasi tema ===== -->
+    <link rel="stylesheet" href="assets/css/themes/editorial.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/apexcharts/3.45.2/apexcharts.min.js"></script>
     <style>
@@ -144,7 +146,7 @@ $ppm_total = count(array_filter(
                                 padding:0.3rem 0.875rem 0.4rem; flex-shrink:0;">
                         <button onclick="ppmPrev()" class="ppm-btn">&#8592;</button>
                         <div style="flex:1; height:3px; background:#e5e7eb; border-radius:2px;">
-                        <div id="ppmProgress" style="height:100%;background:#D0021B;border-radius:2px;width:<?= round(1/$ppm_total*100,2) ?>%;transition:width 0.3s ease;"></div>
+                        <div id="ppmProgress" style="height:100%;background:var(--th-accent);border-radius:2px;width:<?= round(1/$ppm_total*100,2) ?>%;transition:width 0.3s ease;"></div>
                         </div>
                         <span id="ppmCounter"
                               style="font-size:10px; color:#9ca3af; white-space:nowrap;">
@@ -250,9 +252,9 @@ $ppm_total = count(array_filter(
                                     <button onclick="setKaizenBulan(<?= $num ?>, this)"
                                         class="kaizen-bulan-btn <?= $num == $cur_m ? 'active' : '' ?>"
                                         style="font-size:9px; padding:2px 6px; border-radius:4px; cursor:pointer;
-                                            border:1px solid <?= $num == $cur_m ? '#D0021B' : '#e5e7eb' ?>;
-                                            background:<?= $num == $cur_m ? '#D0021B' : '#fff' ?>;
-                                            color:<?= $num == $cur_m ? '#fff' : '#6b7280' ?>; font-weight:600;">
+                                            border:1px solid <?= $num == $cur_m ? 'var(--th-accent)' : 'var(--th-line)' ?>;
+                                            background:<?= $num == $cur_m ? 'var(--th-accent)' : 'var(--th-inset)' ?>;
+                                            color:<?= $num == $cur_m ? '#fff' : 'var(--th-muted)' ?>; font-weight:600;">
                                         <?= $label ?>
                                     </button>
                                     <?php endforeach; ?>
@@ -291,7 +293,7 @@ $ppm_total = count(array_filter(
                             <select id="ito-year-select"
                                 style="font-size:10px; border:1px solid #e5e7eb; border-radius:6px;
                                        padding:2px 6px; background:#fff; cursor:pointer; outline:none;">
-                                <option value="">Ikut Dashboard</option>
+                                <option value="">Follow Dashboard</option>
                                 <option value="fy2022">FY2022</option>
                                 <option value="fy2023">FY2023</option>
                                 <option value="fy2024">FY2024</option>
@@ -321,7 +323,7 @@ $ppm_total = count(array_filter(
                                     <div style="display:flex; align-items:center; gap:6px;">
                                         <span id="event-tahun-badge"
                                             style="font-size:10px; padding:2px 8px; border-radius:20px;
-                                                    background:#FDECEA; color:#D0021B; font-weight:600;"></span>
+                                                    background:var(--th-accent-soft); color:var(--th-accent); font-weight:600;"></span>
                                         <a href="pages/event_detail.php" class="detail-link">Detail →</a>
                                     </div>
                                 </div>
@@ -333,14 +335,14 @@ $ppm_total = count(array_filter(
                                         <div id="label-ywks"
                                             style="font-size:10px;font-weight:800;color:#7B0000;
                                                     text-transform:uppercase;letter-spacing:.06em;
-                                                    padding:4px 0;border-bottom:2px solid #D0021B;
+                                                    padding:4px 0;border-bottom:2px solid var(--th-accent);
                                                     margin-bottom:6px;flex-shrink:0;">YWKS</div>
                                         <div id="scroll-ywks"
                                             style="flex:1;min-height:0;overflow:hidden;display:flex;flex-direction:column;"></div>
                                         <div style="padding-top:6px;border-top:1px solid #f0f0f0;margin-top:6px;flex-shrink:0;">
-                                            <div style="background:#f4f5f7;border-radius:8px;padding:6px 10px;">
-                                                <div style="font-size:9px;color:#6b7280;text-transform:uppercase;letter-spacing:0.04em;">Participants</div>
-                                                <div style="font-size:18px;font-weight:700;color:#D0021B;" id="ywks-participants">—</div>
+                                            <div style="background:var(--th-inset);border-radius:8px;padding:6px 10px;">
+                                                <div style="font-size:9px;color:var(--th-muted);text-transform:uppercase;letter-spacing:0.04em;">Participants</div>
+                                                <div style="font-size:18px;font-weight:700;color:var(--th-accent);" id="ywks-participants">—</div>
                                             </div>
                                         </div>
                                     </div>
@@ -350,17 +352,17 @@ $ppm_total = count(array_filter(
                                         <div id="label-yjp"
                                             style="font-size:10px;font-weight:800;color:#7B0000;
                                                     text-transform:uppercase;letter-spacing:.06em;
-                                                    padding:4px 0;border-bottom:2px solid #D0021B;
+                                                    padding:4px 0;border-bottom:2px solid var(--th-accent);
                                                     margin-bottom:6px;flex-shrink:0;">YGP INTERNAL</div>
                                         <div id="scroll-yjp"
                                               style="flex:1;min-height:0;overflow-x:auto;overflow-y:hidden;
                                                     display:flex;flex-direction:row;gap:8px;align-items:flex-start;"></div>
                                         <div style="padding-top:6px;border-top:1px solid #f0f0f0;
                                                     margin-top:6px;flex-shrink:0;">
-                                            <div style="background:#f4f5f7;border-radius:8px;padding:6px 10px;">
-                                                <div style="font-size:9px;color:#6b7280;text-transform:uppercase;
+                                            <div style="background:var(--th-inset);border-radius:8px;padding:6px 10px;">
+                                                <div style="font-size:9px;color:var(--th-muted);text-transform:uppercase;
                                                             letter-spacing:0.04em;">Participants</div>
-                                                <div style="font-size:18px;font-weight:700;color:#D0021B;"
+                                                <div style="font-size:18px;font-weight:700;color:var(--th-accent);"
                                                     id="event-total-participants">—</div>
                                             </div>
                                         </div>
@@ -378,6 +380,17 @@ $ppm_total = count(array_filter(
 </div>
 
 <script>
+// ===== Warna chart dari token tema aktif =====
+const cssVar = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const CHART_TEXT = cssVar('--th-chart-text') || '#6b7280';
+const CHART_GRID = cssVar('--th-chart-grid') || '#f0f0f0';
+const CHART_MODE = cssVar('--th-chart-mode') || 'light';
+const CAPTURE_BG = cssVar('--th-capture-bg') || '#ffffff';
+if (window.Chart) {
+    Chart.defaults.color = CHART_TEXT;
+    Chart.defaults.borderColor = CHART_GRID;
+}
+
 const API_PARAMS = '<?= $api_params ?>';
 const QS = API_PARAMS ? '?' + API_PARAMS : '';
 const SEC_COLORS = { MS1:'#185FA5', MS2:'#2e7d32', Conrod:'#854F0B', HDE:'#6B2D8B' };
@@ -430,13 +443,13 @@ fetch(API_BASE + 'overview_summary.php' + QS)
             sf.total + '<span style="font-size:13px;"> accident</span>';
         document.getElementById('kpi-sf-sub').innerHTML =
             `<span class="${sf.total===0?'ok':'bad'}">
-                ${sf.total===0?'✓ Zero accident':'⚠ Ada insiden'}
+                ${sf.total===0?'✓ Zero accident':'⚠ Incident'}
              </span> &nbsp;·&nbsp; <span style="font-size:9px;">${sf.periode ?? ''}</span>`;
     }
 }
         if (ql && ql.actual !== null) {
             document.getElementById('kpi-ql-actual').innerHTML =
-                Number(ql.actual).toLocaleString('id-ID');
+                Number(ql.actual).toLocaleString('en-US');
             document.getElementById('kpi-ql-sub').innerHTML =
                 `<span class="${ql.actual<=ql.target?'ok':'bad'}">
                     ${ql.actual<=ql.target?'✓ On target':'⚠ Over target'}
@@ -480,7 +493,7 @@ fetch(API_BASE + 'overview_summary.php' + QS)
         if (sf?.total > 0)
             gaps.push({ label:'Safety', val:sf.total+' accident' });
         if (ql?.actual !== null && ql.actual > ql.target)
-            gaps.push({ label:'Quality', val:'+'+Math.round(ql.actual-ql.target).toLocaleString('id-ID')+' Part Per Million' });
+            gaps.push({ label:'Quality', val:'+'+Math.round(ql.actual-ql.target).toLocaleString('en-US')+' Part Per Million' });
                     gaps.push({ label:'F-Cost Conrod', val: fc.conrod.pct+'% > '+fc.conrod.target_pct+'%' });
         if (fc?.hde?.status === 'over')
             gaps.push({ label:'F-Cost HDE', val: fc.hde.pct+'% > '+fc.hde.target_pct+'%' });
@@ -489,7 +502,7 @@ fetch(API_BASE + 'overview_summary.php' + QS)
             ? `<span style="font-size:11px;font-weight:700;color:#22c55e;">✓ All KPI On Target</span>`
             : gaps.map(g => `
                 <span style="font-size:11px;font-weight:700;padding:2px 10px;
-                             border-radius:20px;background:#FDECEA;color:#D0021B;">
+                             border-radius:20px;background:var(--th-accent-soft);color:var(--th-accent);">
                     ⚠ ${g.label}: ${g.val}
                 </span>`).join('');
     }).catch(() => {});
@@ -499,16 +512,16 @@ fetch(API_BASE + 'overview_summary.php' + QS)
 
 function ytdTooltipLabel(ctx, kpi) {
     const v = ctx.parsed.y, lbl = ctx.dataset.label ?? '';
-    if (kpi==='fcost')           return ` ${lbl}: Rp ${Number(v).toLocaleString('id-ID')}`;
+    if (kpi==='fcost')           return ` ${lbl}: Rp ${Number(v).toLocaleString('en-US')}`;
     if (kpi==='operation_ratio') return ` ${lbl}: ${v.toFixed(1)}%`;
-    if (kpi==='quality')         return ` ${lbl}: ${Number(v).toLocaleString('id-ID')} Part per Million`;
+    if (kpi==='quality')         return ` ${lbl}: ${Number(v).toLocaleString('en-US')} Part per Million`;
     return ` ${lbl}: ${v} case`;
 }
 
 function ytdYAxisCb(v, kpi) {
     if (kpi==='fcost')           return 'Rp'+(v/1000000).toFixed(0)+'jt';
     if (kpi==='operation_ratio') return v+'%';
-    if (kpi==='quality')         return Number(v).toLocaleString('id-ID');
+    if (kpi==='quality')         return Number(v).toLocaleString('en-US');
     return v;
 }
 
@@ -541,7 +554,7 @@ function renderYTDChart(json) {
     const color   = SEC_COLORS[activeSec];
     const curLbl  = json.cur_fy.replace('fy','FY');
     const lastLbl = json.last_fy.replace('fy','FY');
-    const typeStr = (activeKPI==='fcost'||activeKPI==='safety') ? 'Kumulatif YTD' : 'Running Avg YTD';
+    const typeStr = (activeKPI==='fcost'||activeKPI==='safety') ? 'Cumulative YTD' : 'Running Avg YTD';
 
     document.getElementById('ytd-home-subtitle').textContent =
         `${KPI_LABELS[activeKPI]} · ${typeStr} · ${activeSec}`;
@@ -575,11 +588,11 @@ function renderYTDChart(json) {
             tooltip: { callbacks: { label: ctx => ytdTooltipLabel(ctx, activeKPI) } }
         },
         scales: {
-            x: { ticks:{font:{size:9}, maxRotation:0, autoSkip:false}, grid:{color:'#f0f0f0'} },
+            x: { ticks:{font:{size:9}, maxRotation:0, autoSkip:false}, grid:{color:CHART_GRID} },
             y: {
                 min: yAxis.min, max: yAxis.max,
                 ticks: { font:{size:9}, callback: v => ytdYAxisCb(v, activeKPI) },
-                grid: { color:'#f0f0f0' }
+                grid: { color:CHART_GRID }
             }
         }
     };
@@ -656,7 +669,7 @@ async function loadProductivityChart() {
         renderProductivityChart(lineMap, activeSec);
 
     } catch(e) {
-        document.getElementById('ytd-home-subtitle').textContent = '⚠ Gagal memuat data productivity';
+        document.getElementById('ytd-home-subtitle').textContent = '⚠ Failed to load productivity data';
     }
 }
 
@@ -727,6 +740,7 @@ function renderProductivityChart(lineMap, sec) {
             height: '100%',
             fontFamily: "'Segoe UI', sans-serif",
             background: 'transparent',
+            foreColor: CHART_TEXT,
             toolbar: { show: false },
             zoom: { enabled: false },
             animations: { enabled: false },
@@ -738,8 +752,8 @@ function renderProductivityChart(lineMap, sec) {
             { name: `Pass Rate FY${yc} (%)`, type: 'line', data: ALL_FY_TS.map((t,i) => ({ x:t, y:merged.pass26[i] })) },
         ],
         colors: ['#8cbab7', '#1500d1', '#ff5900', '#F59E0B'],
-        theme: { mode: 'light' },
-        grid: { borderColor: 'rgba(60,90,180,.3)', strokeDashArray: 2 },
+        theme: { mode: CHART_MODE },
+        grid: { borderColor: CHART_GRID, strokeDashArray: 2 },
         legend: {
             show: true, position: 'top', horizontalAlign: 'right',
             fontSize: '9px', markers: { width: 10, height: 10 },
@@ -755,7 +769,7 @@ function renderProductivityChart(lineMap, sec) {
         xaxis: {
             type: 'datetime',
             labels: {
-                style: { fontSize: '9px', colors: '#6b7280' },
+                style: { fontSize: '9px', colors: CHART_TEXT },
                 datetimeUTC: false, format: 'MMM',
                 rotate: -30, rotateAlways: true,
             },
@@ -767,15 +781,15 @@ function renderProductivityChart(lineMap, sec) {
         markers: { size: [0, 0, 3, 3], strokeWidth: 2, strokeColor: '#fff', showNullDataPoints: false },
         yaxis: [
             {
-                title: { text: 'Productivity', style: { fontSize: '8px', color: '#6b7280' } },
-                labels: { style: { fontSize: '9px', colors: '#6b7280' }, formatter: v => v != null ? parseFloat(v).toFixed(1) : '' },
+                title: { text: 'Productivity', style: { fontSize: '8px', color: CHART_TEXT } },
+                labels: { style: { fontSize: '9px', colors: CHART_TEXT }, formatter: v => v != null ? parseFloat(v).toFixed(1) : '' },
                 tickAmount: 5,
             },
             { show: false, tickAmount: 5 },
             {
                 opposite: true,
-                title: { text: 'Pass Rate (%)', style: { fontSize: '8px', color: '#6b7280' } },
-                labels: { style: { fontSize: '9px', colors: '#6b7280' }, formatter: v => v != null ? parseFloat(v).toFixed(1) + '%' : '' },
+                title: { text: 'Pass Rate (%)', style: { fontSize: '8px', color: CHART_TEXT } },
+                labels: { style: { fontSize: '9px', colors: CHART_TEXT }, formatter: v => v != null ? parseFloat(v).toFixed(1) + '%' : '' },
                 tickAmount: 5,
             },
             { opposite: true, show: false, tickAmount: 5 },
@@ -790,9 +804,9 @@ function updateSecTabs() {
     document.querySelectorAll('.ytd-sec-tab').forEach(b => {
         const isActive = b.dataset.sec === activeSec;
         b.classList.toggle('active', isActive);
-        b.style.background  = isActive ? SEC_COLORS[b.dataset.sec] : '#fff';
-        b.style.borderColor = isActive ? SEC_COLORS[b.dataset.sec] : '#e5e7eb';
-        b.style.color       = isActive ? '#fff' : '#6b7280';
+        b.style.background  = isActive ? SEC_COLORS[b.dataset.sec] : 'var(--th-inset)';
+        b.style.borderColor = isActive ? SEC_COLORS[b.dataset.sec] : 'var(--th-line)';
+        b.style.color       = isActive ? '#fff' : 'var(--th-muted)';
     });
 }
 
@@ -816,8 +830,8 @@ document.querySelectorAll('.ytd-sec-tab').forEach(btn => {
     });
     btn.addEventListener('mouseleave', () => {
         if (btn.dataset.sec !== activeSec) {
-            btn.style.borderColor = '#e5e7eb';
-            btn.style.color = '#6b7280';
+            btn.style.borderColor = 'var(--th-line)';
+            btn.style.color = 'var(--th-muted)';
         }
     });
 });
@@ -839,14 +853,14 @@ function loadITOChart(year) {
         .catch(() => {});
 }
 
-// Plugin latar putih agar hasil capture tidak transparan
+// Plugin latar untuk hasil capture (gelap, menyesuaikan tema aktif)
 const itoWhiteBg = {
     id: 'itoWhiteBg',
     beforeDraw: (chart) => {
         const ctx = chart.ctx;
         ctx.save();
         ctx.globalCompositeOperation = 'destination-over';
-        ctx.fillStyle = '#ffffff';
+        ctx.fillStyle = CAPTURE_BG;
         ctx.fillRect(0, 0, chart.width, chart.height);
         ctx.restore();
     }
@@ -896,7 +910,6 @@ function renderITOChart(el, j) {
     if (sub) sub.textContent = `Days & Inventory Amount · FY${yr(lastFy)} vs FY${yr(curFy)}`;
     if (itoChart) { itoChart.destroy(); itoChart = null; }
     itoChart = new Chart(el, {
-        plugins: [itoWhiteBg],
         type: 'bar',
         data: {
             labels: j.labels || MONTHS_FY,
@@ -926,16 +939,16 @@ function renderITOChart(el, j) {
                     const v = ctx.parsed.y; if (v == null) return null;
                     return ctx.dataset.label.includes('Inventory')
                         ? ` ${ctx.dataset.label}: ${v}`
-                        : ` ${ctx.dataset.label}: ${v} hari`;
+                        : ` ${ctx.dataset.label}: ${v} days`;
                 }}}
             },
             scales:{
-                x:  { ticks:{ font:{size:9}, maxRotation:0, autoSkip:false }, grid:{ color:'#f0f0f0' } },
+                x:  { ticks:{ font:{size:9}, maxRotation:0, autoSkip:false }, grid:{ color:CHART_GRID } },
                 yAmt: { position:'left',
-                        title:{ display:true, text:'Amount (IDR)', font:{size:9}, color:'#6b7280' },
-                        ticks:{ font:{size:9} }, grid:{ color:'#f0f0f0' } },
+                        title:{ display:true, text:'Amount (IDR)', font:{size:9}, color:CHART_TEXT },
+                        ticks:{ font:{size:9} }, grid:{ color:CHART_GRID } },
                 yDays:{ position:'right',
-                        title:{ display:true, text:'Days', font:{size:9}, color:'#6b7280' },
+                        title:{ display:true, text:'Days', font:{size:9}, color:CHART_TEXT },
                         ticks:{ font:{size:9} }, grid:{ drawOnChartArea:false } },
             }
         }
@@ -958,7 +971,7 @@ fetch(API_BASE + 'overview_kaizen.php')
         } else {
             banner.style.background = '#f4f5f7';
             banner.style.color      = '#9ca3af';
-            banner.textContent      = 'Belum ada data kaizen';
+            banner.textContent      = 'No kaizen data yet';
         }
 
         const statusClass = s =>
@@ -969,7 +982,7 @@ fetch(API_BASE + 'overview_kaizen.php')
         if (!d.top5 || d.top5.length === 0) {
             tbody.innerHTML = `<tr><td colspan="4"
                 style="text-align:center;color:#9ca3af;padding:1rem;">
-                Belum ada data</td></tr>`;
+                No data yet</td></tr>`;
             return;
         }
         tbody.innerHTML = d.top5.map(k => `
@@ -1028,19 +1041,19 @@ fetch(API_BASE + 'overview_event.php')
                         ${medal}${suffix(r)} Winner</span>` : '';
                 const imgHtml = ev.foto
                     ? `<img src="assets/img/${ev.foto}" style="width:100%;height:130px;object-fit:cover;border-radius:8px 8px 0 0;display:block;" onerror="this.style.display='none'">`
-                    : `<div style="width:100%;height:130px;background:#f4f5f7;border-radius:8px 8px 0 0;display:flex;align-items:center;justify-content:center;font-size:28px;">📷</div>`;
+                    : `<div style="width:100%;height:130px;background:var(--th-card);border-radius:8px 8px 0 0;display:flex;align-items:center;justify-content:center;font-size:28px;">📷</div>`;
 
                 wrap.innerHTML = `
-                    <div style="border:2px solid ${c.border};border-radius:10px;background:#fff;overflow:hidden;flex-shrink:0;width:100%;">
+                    <div style="border:2px solid ${c.border};border-radius:10px;background:var(--th-card);overflow:hidden;flex-shrink:0;width:100%;">
                         <div style="position:relative;">${imgHtml}${badgeHtml}</div>
                         <div style="padding:8px 10px;">
-                            <div style="font-size:12px;font-weight:700;color:#1a1a1a;line-height:1.3;margin-bottom:3px;">${ev.judul_materi??'—'}</div>
-                            <div style="font-size:10px;color:#6b7280;">${ev.peserta??'—'}</div>
-                            ${ev.departemen?`<div style="font-size:10px;color:#D0021B;font-weight:600;margin-top:2px;">${ev.departemen}</div>`:''}
+                            <div style="font-size:12px;font-weight:700;color:var(--th-text);line-height:1.3;margin-bottom:3px;">${ev.judul_materi??'—'}</div>
+                            <div style="font-size:10px;color:var(--th-muted);">${ev.peserta??'—'}</div>
+                            ${ev.departemen?`<div style="font-size:10px;color:var(--th-accent);font-weight:600;margin-top:2px;">${ev.departemen}</div>`:''}
                         </div>
                         <!-- Progress dots -->
                         <div style="display:flex;align-items:center;gap:4px;padding:4px 10px 8px;justify-content:center;">
-                            ${photos.map((_,i)=>`<div style="width:${i===idx?'16px':'6px'};height:6px;border-radius:3px;background:${i===idx?'#D0021B':'#e5e7eb'};transition:all .3s;"></div>`).join('')}
+                            ${photos.map((_,i)=>`<div style="width:${i===idx?'16px':'6px'};height:6px;border-radius:3px;background:${i===idx?'var(--th-accent)':'var(--th-line)'};transition:all .3s;"></div>`).join('')}
                         </div>
                     </div>`;
             }
@@ -1111,10 +1124,10 @@ document.addEventListener('keydown', e => {
 // ===== REAL-TIME CLOCK =====
 function updateClock() {
     const now  = new Date();
-    const date = now.toLocaleDateString('id-ID', {
+    const date = now.toLocaleDateString('en-GB', {
         day:'2-digit', month:'short', year:'numeric'
     });
-    const time = now.toLocaleTimeString('id-ID', {
+    const time = now.toLocaleTimeString('en-GB', {
         hour:'2-digit', minute:'2-digit', second:'2-digit'
     });
     const el = document.getElementById('live-clock');
@@ -1148,12 +1161,12 @@ function refreshAllData() {
                     sf.total + '<span style="font-size:13px;"> accident</span>';
                 document.getElementById('kpi-sf-sub').innerHTML =
                     `<span class="${sf.total===0?'ok':'bad'}">
-                        ${sf.total===0?'✓ Zero accident':'⚠ Ada insiden'}
+                        ${sf.total===0?'✓ Zero accident':'⚠ Incident'}
                      </span> &nbsp;·&nbsp; ${sf.periode}`;
             }
             if (ql && ql.actual !== null) {
                 document.getElementById('kpi-ql-actual').innerHTML =
-                    Number(ql.actual).toLocaleString('id-ID');
+                    Number(ql.actual).toLocaleString('en-US');
                 document.getElementById('kpi-ql-sub').innerHTML =
                     `<span class="${ql.actual<=ql.target?'ok':'bad'}">
                         ${ql.actual<=ql.target?'✓ On target':'⚠ Over target'}
@@ -1190,7 +1203,7 @@ function refreshAllData() {
             if (sf?.total > 0)
                 gaps.push({ label:'Safety', val:sf.total+' accident' });
             if (ql?.actual !== null && ql.actual > ql.target)
-                gaps.push({ label:'Quality', val:'+'+Math.round(ql.actual-ql.target).toLocaleString('id-ID')+' PPM' });
+                gaps.push({ label:'Quality', val:'+'+Math.round(ql.actual-ql.target).toLocaleString('en-US')+' PPM' });
             if (fc?.actual !== null && fc.actual > fc.target)
                 gaps.push({ label:'F-Cost', val:'+Rp'+Math.round((fc.actual-fc.target)/1000000).toFixed(0)+'jt' });
 
@@ -1198,7 +1211,7 @@ function refreshAllData() {
                 ? `<span style="font-size:11px;font-weight:700;color:#22c55e;">✓ All KPI On Target</span>`
                 : gaps.map(g => `
                     <span style="font-size:11px;font-weight:700;padding:2px 10px;
-                                 border-radius:20px;background:#FDECEA;color:#D0021B;">
+                                 border-radius:20px;background:var(--th-accent-soft);color:var(--th-accent);">
                         ⚠ ${g.label}: ${g.val}
                     </span>`).join('');
 
@@ -1264,12 +1277,12 @@ let kaizenBulanAktif = <?= (int)date('n') ?>;
 function setKaizenBulan(angka, el) {
     kaizenBulanAktif = angka;
     document.querySelectorAll('.kaizen-bulan-btn').forEach(b => {
-        b.style.background  = '#fff';
-        b.style.borderColor = '#e5e7eb';
-        b.style.color       = '#6b7280';
+        b.style.background  = 'var(--th-inset)';
+        b.style.borderColor = 'var(--th-line)';
+        b.style.color       = 'var(--th-muted)';
     });
-    el.style.background  = '#D0021B';
-    el.style.borderColor = '#D0021B';
+    el.style.background  = 'var(--th-accent)';
+    el.style.borderColor = 'var(--th-accent)';
     el.style.color       = '#fff';
     loadKaizenAnalytics();
 }
@@ -1284,7 +1297,7 @@ async function loadKaizenAnalytics() {
         const d = await r.json();
         if (!d || !d.dept || !d.radar) return; // tambahkan ini
 
-        const monthNames = ['','Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
+        const monthNames = ['','Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
         const periodEl = document.getElementById('kaizen-analytics-period');
         if (periodEl) periodEl.textContent = `${monthNames[bulan]} ${tahun}`;
 
@@ -1409,7 +1422,7 @@ async function openKaizenDeptDetail(deptName) {
     modal.style.display = 'flex';
 
     document.getElementById('modalKaizenTitle').textContent =
-        `BREAKDOWN DETAIL KARYAWAN: ${deptName.toUpperCase()}`;
+        `EMPLOYEE BREAKDOWN: ${deptName.toUpperCase()}`;
     document.getElementById('modalKaizenTotal').textContent = '—';
     document.getElementById('modalKaizenIkut').textContent  = '—';
     document.getElementById('modalKaizenPersen').textContent = '—';
@@ -1431,7 +1444,7 @@ async function openKaizenDeptDetail(deptName) {
 
         const tbody = document.getElementById('modalKaizenTbody');
         if (!d.karyawan || d.karyawan.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;padding:20px;color:#9ca3af;">Belum ada data</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;padding:20px;color:#9ca3af;">No data yet</td></tr>';
             return;
         }
         tbody.innerHTML = d.karyawan.map((k, i) => `
@@ -1449,7 +1462,7 @@ async function openKaizenDeptDetail(deptName) {
 
     } catch(e) {
         document.getElementById('modalKaizenTbody').innerHTML =
-            '<tr><td colspan="3" style="text-align:center;padding:20px;color:#dc2626;">⚠ Gagal memuat data</td></tr>';
+            '<tr><td colspan="3" style="text-align:center;padding:20px;color:#dc2626;">⚠ Failed to load data</td></tr>';
     }
 }
 
@@ -1474,7 +1487,7 @@ loadKaizenAnalytics();
         <!-- Header -->
         <div id="modalKaizenHeader" style="background:#7B0000; color:#fff;
              padding:14px 20px; display:flex; align-items:center; justify-content:space-between;">
-            <div style="font-size:13px; font-weight:800;" id="modalKaizenTitle">DETAIL KARYAWAN</div>
+            <div style="font-size:13px; font-weight:800;" id="modalKaizenTitle">EMPLOYEE DETAILS</div>
             <button onclick="closeKaizenModal()"
                 style="background:none; border:none; color:#fff; font-size:18px; cursor:pointer;">✕</button>
         </div>
@@ -1483,12 +1496,12 @@ loadKaizenAnalytics();
              style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:0;
                     border-bottom:1px solid #f0f0f0; flex-shrink:0;">
             <div style="text-align:center; padding:12px 8px; border-right:1px solid #f0f0f0;">
-                <div style="font-size:9px; color:#6b7280; text-transform:uppercase; margin-bottom:4px;">Jumlah Karyawan</div>
+                <div style="font-size:9px; color:#6b7280; text-transform:uppercase; margin-bottom:4px;">Number of Employees</div>
                 <div style="font-size:20px; font-weight:700;" id="modalKaizenTotal">—</div>
                 <div style="font-size:10px; color:#6b7280;">Orang</div>
             </div>
             <div style="text-align:center; padding:12px 8px; border-right:1px solid #f0f0f0;">
-                <div style="font-size:9px; color:#6b7280; text-transform:uppercase; margin-bottom:4px;">Karyawan Ikut</div>
+                <div style="font-size:9px; color:#6b7280; text-transform:uppercase; margin-bottom:4px;">Employees Joined</div>
                 <div style="font-size:20px; font-weight:700; color:#D0021B;" id="modalKaizenIkut">—</div>
                 <div style="font-size:10px; color:#6b7280;">Orang</div>
             </div>
@@ -1503,8 +1516,8 @@ loadKaizenAnalytics();
                 <thead>
                     <tr style="background:#f4f5f7; position:sticky; top:0;">
                         <th style="padding:8px 16px; text-align:left; font-size:10px; color:#6b7280; font-weight:700;">Rank</th>
-                        <th style="padding:8px 16px; text-align:left; font-size:10px; color:#6b7280; font-weight:700;">Nama Karyawan</th>
-                        <th style="padding:8px 16px; text-align:center; font-size:10px; color:#6b7280; font-weight:700;">Kontribusi Kaizen</th>
+                        <th style="padding:8px 16px; text-align:left; font-size:10px; color:#6b7280; font-weight:700;">Employee Name</th>
+                        <th style="padding:8px 16px; text-align:center; font-size:10px; color:#6b7280; font-weight:700;">Kaizen Contribution</th>
                     </tr>
                 </thead>
                 <tbody id="modalKaizenTbody">
